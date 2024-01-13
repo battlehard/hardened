@@ -49,7 +49,7 @@ namespace Hardened
       // Populate the byte array with random values
       byte[] guidBytes = Runtime.GetRandom().ToByteArray().Range(0, 16);
 
-      // Set the version (4) and variant bits (2)
+      // Set the version (4) and variant bits (RFC 4122)
       guidBytes[7] = (byte)((guidBytes[7] & 0x0F) | 0x40);
       guidBytes[8] = (byte)((guidBytes[8] & 0x3F) | 0x80);
 
@@ -63,6 +63,7 @@ namespace Hardened
       for (int i = 0; i < byteArray.Length; i++)
       {
         int value = byteArray[i];
+        // Convert byte to hexstring by preserve upper 4 bits and lower 4 bits then convert to char separately
         resultBuilder += $"{GetHexChar(value >> 4)}{GetHexChar(value & 0xF)}";
       }
       return resultBuilder;
