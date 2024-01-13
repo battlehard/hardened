@@ -1,6 +1,7 @@
 ﻿using Neo;
 using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Services;
+using System.Numerics;
 using static Hardened.Helpers;
 
 namespace Hardened
@@ -9,11 +10,27 @@ namespace Hardened
   {
     private static void CheckContractAuthorization()
     {
-      if (!IsOwner())
+      Assert(IsAdmin(), $"{CONTRACT_NAME}: No admin authorization");
+    }
+
+    private static bool IsAdmin()
+    {
+      if (IsOwner())
       {
-        var tx = (Transaction)Runtime.ScriptContainer;
+        return true;
+      }
+      else
+      {
         // tx.Sender is transaction signer
-        Assert(AdminHashesStorage.IsExist(tx.Sender) == true, $"{CONTRACT_NAME}: No admin authorization");
+        var tx = (Transaction)Runtime.ScriptContainer;
+        if (AdminHashesStorage.IsExist(tx.Sender))
+        {
+          return true;
+        }
+        else
+        {
+          return false;
+        }
       }
     }
 
@@ -33,6 +50,23 @@ namespace Hardened
     {
       CheckContractAuthorization();
       AdminHashesStorage.Delete(contractHash);
+    }
+
+    public static void FeeUpdate(BigInteger? bTokenMintCost, BigInteger? bTokenUpdateCost,
+                                 BigInteger? gasMintCost, BigInteger? gasUpdateCost, UInt160? walletPoolHash)
+    {
+      CheckContractAuthorization();
+      FeeStructure updatingFeeStructure = FeeStructureStorage.Get();
+      if (bTokenMintCost != null) updatingFeeStructure.bTokenMintCost = (BigInteger)bTokenMintCost;
+      if (bTokenUpdateCost != null) updatingFeeStructure.bTokenUpdateCost = (BigInteger)bTokenUpdateCost;
+      if (gasMintCost != null) updatingFeeStructure.gasMintCost = (BigInteger)gasMintCost;
+      if (gasUpdateCost != null) updatingFeeStructure.gasUpdateCost = (BigInteger)gasUpdateCost;
+      if (walletPoolHash != null)
+      {
+        ValidateScriptHash(walletPoolHash);
+        updatingFeeStructure.walletPoolHash = walletPoolHash;
+      }
+      FeeStructureStorage.Put(updatingFeeStructure);
     }
   }
 }

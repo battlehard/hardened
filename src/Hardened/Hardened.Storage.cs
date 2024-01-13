@@ -1,6 +1,7 @@
 
 using Neo;
 using Neo.SmartContract.Framework;
+using Neo.SmartContract.Framework.Native;
 using Neo.SmartContract.Framework.Services;
 
 namespace Hardened
@@ -9,6 +10,7 @@ namespace Hardened
   {
     private static readonly byte[] Prefix_Owner = new byte[] { 0x01, 0x00 };
     private static readonly byte[] Prefix_Admin_Hashes = new byte[] { 0x01, 0x01 };
+    private static readonly byte[] Prefix_Fee_Structure = new byte[] { 0x02, 0x00 };
 
     /// <summary>
     /// Class <c>AdminHashesStorage</c>
@@ -46,6 +48,42 @@ namespace Hardened
         if (adminHashesMap.Get(addressHash) != null) return true;
         else return false;
       }
+    }
+
+    public static class FeeStructureStorage
+    {
+      internal static void Put(FeeStructure feeStructure)
+      {
+        Storage.Put(Storage.CurrentContext, Prefix_Fee_Structure, StdLib.Serialize(feeStructure));
+      }
+
+      internal static FeeStructure Get()
+      {
+        ByteString feeStructureStorage = Storage.Get(Storage.CurrentContext, Prefix_Fee_Structure);
+        if (feeStructureStorage == null)
+        {
+          FeeStructure feeStructure = new FeeStructure
+          {
+            bTokenMintCost = defaultBTokenMintCost,
+            bTokenUpdateCost = defaultBTokenUpdateCost,
+            gasMintCost = defaultGasMintCost,
+            gasUpdateCost = defaultGasUpdateCost,
+            walletPoolHash = Runtime.CallingScriptHash
+          };
+          return feeStructure;
+        }
+        else
+        {
+          return (FeeStructure)StdLib.Deserialize(feeStructureStorage);
+        }
+      }
+    }
+
+    public static class PendingStorage
+    {
+      // TODO:
+      // get by wallet id
+      // get all
     }
   }
 }

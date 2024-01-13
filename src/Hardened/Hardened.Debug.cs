@@ -1,5 +1,7 @@
 using Neo;
+using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Services;
+using System.Numerics;
 using static Hardened.Helpers;
 
 namespace Hardened
@@ -9,7 +11,17 @@ namespace Hardened
     public static void TestSuite()
     {
       CheckContractAuthorization();
+      Debug_Helpers();
       Debug_ManageAdmin();
+      Debug_FeeUpdate();
+    }
+    private static void Debug_Helpers()
+    {
+      for (int i = 0; i < 10; i++)
+      {
+        string uuid = GenerateUuidV4();
+        ValidateUuid(uuid);
+      }
     }
     private static void Debug_ManageAdmin()
     {
@@ -38,6 +50,50 @@ namespace Hardened
       Assert(AdminHashesStorage.IsExist(admin1) == false, "Expected no admin1");
       Assert(GetAdmin().Count == 1 && GetAdmin()[0] == admin2, "Expected admin2");
       Runtime.Notify("adminList case 4", new object[] { GetAdmin() });
+    }
+    private static void Debug_FeeUpdate()
+    {
+      // Case 1: Default fee
+      Assert_DefaultFeeStructure();
+      Runtime.Notify("Default Fee Structure: case 1", new object[] { FeeStructureStorage.Get() });
+      // Case 2: Updating with null value, end with default fee
+      FeeUpdate(null, null, null, null, null);
+      Assert_DefaultFeeStructure();
+      Runtime.Notify("Default Fee Structure: case 2", new object[] { FeeStructureStorage.Get() });
+
+      BigInteger bTokenMintCost = 2_00000000;
+      BigInteger bTokenUpdateCost = 1_00000000;
+      BigInteger gasMintCost = 0_10000000;
+      BigInteger gasUpdateCost = 0_05000000;
+      UInt160 walletPoolHash = ToScriptHash("Nh9XK6sZ6vkPu9N2L9GxnkogxXKVCgDMws");
+      // Case 3: Updating with new fee structure
+      FeeUpdate(bTokenMintCost, bTokenUpdateCost, gasMintCost, gasUpdateCost, walletPoolHash);
+      Assert_UpdatedFeeStructure(bTokenMintCost, bTokenUpdateCost, gasMintCost, gasUpdateCost, walletPoolHash);
+      Runtime.Notify("Updated Fee Structure: case 1", new object[] { FeeStructureStorage.Get() });
+      // Case 4: Updating with null value, fee structure not changed.
+      FeeUpdate(null, null, null, null, null);
+      Assert_UpdatedFeeStructure(bTokenMintCost, bTokenUpdateCost, gasMintCost, gasUpdateCost, walletPoolHash);
+      Runtime.Notify("Updated Fee Structure: case 2", new object[] { FeeStructureStorage.Get() });
+    }
+
+    private static void Assert_DefaultFeeStructure()
+    {
+      FeeStructure defaultFeeStructure = FeeStructureStorage.Get();
+      Assert(defaultFeeStructure.bTokenMintCost == defaultBTokenMintCost, "Expected defaultBTokenMintCost");
+      Assert(defaultFeeStructure.bTokenUpdateCost == defaultBTokenUpdateCost, "Expected defaultBTokenUpdateCost");
+      Assert(defaultFeeStructure.gasMintCost == defaultGasMintCost, "Expected defaultBTokenMintCost");
+      Assert(defaultFeeStructure.gasUpdateCost == defaultGasUpdateCost, "Expected defaultBTokenMintCost");
+      Assert(defaultFeeStructure.walletPoolHash == Runtime.CallingScriptHash, "Expected Runtime.CallingScriptHash");
+    }
+
+    private static void Assert_UpdatedFeeStructure(BigInteger bTokenMintCost, BigInteger bTokenUpdateCost, BigInteger gasMintCost, BigInteger gasUpdateCost, UInt160 walletPoolHash)
+    {
+      FeeStructure updatedFeeStructure = FeeStructureStorage.Get();
+      Assert(updatedFeeStructure.bTokenMintCost == bTokenMintCost, $"Expected {bTokenMintCost}");
+      Assert(updatedFeeStructure.bTokenUpdateCost == bTokenUpdateCost, $"Expected {bTokenUpdateCost}");
+      Assert(updatedFeeStructure.gasMintCost == gasMintCost, $"Expected {gasMintCost}");
+      Assert(updatedFeeStructure.gasUpdateCost == gasUpdateCost, $"Expected {gasUpdateCost}");
+      Assert(updatedFeeStructure.walletPoolHash == walletPoolHash, $"Expected {(ByteString)walletPoolHash}");
     }
   }
 }

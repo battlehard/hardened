@@ -1,4 +1,6 @@
-﻿using Neo.SmartContract.Framework;
+﻿using Neo;
+using Neo.SmartContract.Framework;
+using System.Numerics;
 
 namespace Hardened
 {
@@ -9,5 +11,14 @@ namespace Hardened
   public class HardenedState : Nep11TokenState
   {
     // TODO: add properties
+  }
+
+  public class FeeStructure
+  {
+    public BigInteger bTokenMintCost;
+    public BigInteger bTokenUpdateCost;
+    public BigInteger gasMintCost;
+    public BigInteger gasUpdateCost;
+    public UInt160? walletPoolHash;
   }
 }
