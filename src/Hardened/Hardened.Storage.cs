@@ -68,7 +68,7 @@ namespace Hardened
             bTokenUpdateCost = defaultBTokenUpdateCost,
             gasMintCost = defaultGasMintCost,
             gasUpdateCost = defaultGasUpdateCost,
-            walletPoolHash = Runtime.CallingScriptHash
+            walletPoolHash = Runtime.ExecutingScriptHash // If no pool set, it will default as this contract address.
           };
           return feeStructure;
         }
