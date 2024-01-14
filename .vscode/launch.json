@@ -15,7 +15,45 @@
         "args": []
       },
       "storage": [],
-      "signers": ["@owner"],
+      "signers": [
+        {
+          "account": "@owner",
+          "scopes": "CalledByEntry, CustomContracts",
+          "allowedcontracts": ["0xd2a4cff31913016155e38e474a2c06d08be276cf"] // GAS contract hash
+        }
+      ],
+      "checkpoint": "${workspaceFolder}/checkpoints/hardened-deployed.neoxp-checkpoint"
+    },
+    {
+      "name": "TestPreInfusion",
+      "type": "neo-contract",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/Hardened/bin/sc/Hardened.nef",
+      "neo-express": "${workspaceFolder}/default.neo-express",
+      "invocation": {
+        "operation": "preInfusion",
+        "args": [
+          "abcdefg_vqoe",
+          "#GasToken",
+          1,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      "storage": [],
+      "signers": [
+        {
+          "account": "@owner",
+          "scopes": "Global"
+        }
+      ],
       "checkpoint": "${workspaceFolder}/checkpoints/hardened-deployed.neoxp-checkpoint"
     }
   ]

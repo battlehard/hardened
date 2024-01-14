@@ -1,7 +1,9 @@
 ﻿using Neo;
 using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Attributes;
+using Neo.SmartContract.Framework.Native;
 using Neo.SmartContract.Framework.Services;
+using static Hardened.Helpers;
 
 namespace Hardened
 {
@@ -35,5 +37,13 @@ namespace Hardened
     //     // return only user wallet data
     //   }
     // }
+
+    private static HardenedState GetState(string tokenId)
+    {
+      StorageMap tokenMap = new(Storage.CurrentContext, Prefix_Token);
+      Assert(tokenMap[tokenId] != null, $"Error: token not found id: {tokenId}");
+
+      return (HardenedState)StdLib.Deserialize(tokenMap[tokenId]);
+    }
   }
 }

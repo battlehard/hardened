@@ -1,34 +1,51 @@
 using Neo;
 using Neo.SmartContract.Framework;
+using Neo.SmartContract.Framework.Native;
 using Neo.SmartContract.Framework.Services;
+using System;
 using System.Numerics;
 using static Hardened.Helpers;
+using static Hardened.Transfer;
 
 namespace Hardened
 {
   public partial class Hardened
   {
+    private static UInt160 owner = ToScriptHash("NbMFc2fEpoF68KMRoJEhxQGTJUUVA5vqoe");
+    private static UInt160 admin1 = ToScriptHash("Nh9XK6sZ6vkPu9N2L9GxnkogxXKVCgDMws");
+    private static UInt160 admin2 = ToScriptHash("NQbHe4RTkzwGD3tVYsTcHEhxWpN4ZEuMuG");
+
     public static void TestSuite()
     {
       CheckContractAuthorization();
       Debug_Helpers();
+      Debug_Transfer();
       Debug_ManageAdmin();
       Debug_FeeUpdate();
     }
     private static void Debug_Helpers()
     {
-      for (int i = 0; i < 10; i++)
+      try
+      {
+        GenerateIdBase64(0);
+      }
+      catch (Exception e)
+      {
+        Runtime.Notify("Expected error", new object[] { e });
+      }
+      Runtime.Log(GenerateIdBase64(16));
+      for (int i = 0; i < 5; i++)
       {
         string uuid = GenerateUuidV4();
         ValidateUuid(uuid);
       }
     }
+    private static void Debug_Transfer()
+    {
+      Safe17Transfer(GAS.Hash, owner, admin1, 1_00000000);
+    }
     private static void Debug_ManageAdmin()
     {
-
-      UInt160 admin1 = ToScriptHash("Nh9XK6sZ6vkPu9N2L9GxnkogxXKVCgDMws");
-      UInt160 admin2 = ToScriptHash("NQbHe4RTkzwGD3tVYsTcHEhxWpN4ZEuMuG");
-
       // Case 1: No admin
       Assert(GetAdmin().Count == 0, "Expected empty list");
       Runtime.Notify("adminList case 1", new object[] { GetAdmin() });

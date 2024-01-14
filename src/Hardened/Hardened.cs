@@ -1,9 +1,11 @@
 ﻿using Neo;
 using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Attributes;
+using Neo.SmartContract.Framework.Native;
 using Neo.SmartContract.Framework.Services;
 using System.Numerics;
 using static Hardened.Helpers;
+using static Hardened.Transfer;
 
 namespace Hardened
 {
@@ -18,21 +20,51 @@ namespace Hardened
                                   UInt160 slot1NftHash, string slot1NftId, UInt160 slot2NftHash, string slot2NftId,
                                   UInt160 slot3NftHash, string slot3NftId, UInt160 slot4NftHash, string slot4NftId)
     {
-      // Get user wallet address
-      // Validate that last 4 digits of user address are match with last 4 digits of clientPubKey
+      // Get user wallet information
+      UInt160 userWalletHash = ((Transaction)Runtime.ScriptContainer).Sender;
+      string userWalletAddress = userWalletHash.ToAddress();
 
-      // Check bhNftId whether blank or not, if blank = mint, else = update
-      // If update validate nft ownership
+      // Validate clientPubKey agaist user wallet address
+      // Simple string comparison like a == b, or a.Equals(b) yield False result. Need to compare by char instead
+      bool isLast4DigitsMatch = true;
+      for (int i = 0; i < 4; i++)
+      {
+        if (clientPubKey.Substring(clientPubKey.Length - 4)[i] != userWalletAddress.Substring(userWalletAddress.Length - 4)[i])
+        {
+          isLast4DigitsMatch = false;
+          break;
+        }
+      }
+      Assert(isLast4DigitsMatch, "Error: The last 4 digits of wallet address and clientPubKey is not match");
 
-      // Transfer payToken to BH contract (this contract)
-      // Transfer all NFT to BH contract for locking.
+      bool isMintRequest = true;
+      FeeStructure feeStructure = FeeStructureStorage.Get();
+      // Destination of locking tokens and NFTs.
+      UInt160 lockedDestinationHash = Runtime.ExecutingScriptHash; // This contract address
 
-      // Transfer gas to BH contract with amount set by admin, different between mint and update
+      if (!IsEmpty(bhNftId)) // Update
+      {
+        isMintRequest = false;
+        HardenedState bhNftState = GetState(bhNftId);
+        Assert(bhNftState.Owner == userWalletHash, $"Error: No ownership on {bhNftId}");
+        Safe11Transfer(Runtime.ExecutingScriptHash, lockedDestinationHash, bhNftId); // transfer to lock
+      }
+      Safe17Transfer(payTokenHash, userWalletHash, lockedDestinationHash, payTokenAmount);
+      // Transfer gas with amount set by admin
+      if (isMintRequest)
+        Safe17Transfer(GAS.Hash, userWalletHash, lockedDestinationHash, feeStructure.gasMintCost);
+      else
+        Safe17Transfer(GAS.Hash, userWalletHash, lockedDestinationHash, feeStructure.gasUpdateCost);
+      // Transfer NFTs to lock
+      if (!IsEmpty(slot1NftId)) Safe11Transfer(slot1NftHash, lockedDestinationHash, slot1NftId);
+      if (!IsEmpty(slot2NftId)) Safe11Transfer(slot2NftHash, lockedDestinationHash, slot2NftId);
+      if (!IsEmpty(slot3NftId)) Safe11Transfer(slot3NftHash, lockedDestinationHash, slot3NftId);
+      if (!IsEmpty(slot4NftId)) Safe11Transfer(slot4NftHash, lockedDestinationHash, slot4NftId);
 
       // Generate contractPubKey (PubKey2)
-      string contractPubKey = GenerateUuidV4();
+      string contractPubKey = GenerateIdBase64(16);
 
-      // Write pending storage
+      // TODO: Write pending storage
 
       // return clientPubKey and ContractPubKey
       return new string[2] { clientPubKey, contractPubKey };
