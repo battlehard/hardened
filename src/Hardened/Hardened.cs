@@ -35,7 +35,7 @@ namespace Hardened
           break;
         }
       }
-      Assert(isLast4DigitsMatch, "Error: The last 4 digits of wallet address and clientPubKey is not match");
+      Assert(isLast4DigitsMatch, E_01);
 
       bool isMintRequest = true;
       FeeStructure feeStructure = FeeStructureStorage.Get();
@@ -51,11 +51,12 @@ namespace Hardened
       }
       Safe17Transfer(payTokenHash, userWalletHash, lockedDestinationHash, payTokenAmount);
       // Transfer gas with amount set by admin
-      if (isMintRequest)
-        Safe17Transfer(GAS.Hash, userWalletHash, lockedDestinationHash, feeStructure.gasMintCost);
-      else
-        Safe17Transfer(GAS.Hash, userWalletHash, lockedDestinationHash, feeStructure.gasUpdateCost);
+      BigInteger gasAmount = feeStructure.gasMintCost;
+      if (!isMintRequest)
+        gasAmount = feeStructure.gasUpdateCost;
+      Safe17Transfer(GAS.Hash, userWalletHash, lockedDestinationHash, gasAmount);
       // Transfer NFTs to lock
+      Assert(!IsEmpty(slot1NftId) || !IsEmpty(slot2NftId) || !IsEmpty(slot3NftId) || !IsEmpty(slot4NftId), E_02);
       if (!IsEmpty(slot1NftId)) Safe11Transfer(slot1NftHash, lockedDestinationHash, slot1NftId);
       if (!IsEmpty(slot2NftId)) Safe11Transfer(slot2NftHash, lockedDestinationHash, slot2NftId);
       if (!IsEmpty(slot3NftId)) Safe11Transfer(slot3NftHash, lockedDestinationHash, slot3NftId);
@@ -64,7 +65,26 @@ namespace Hardened
       // Generate contractPubKey (PubKey2)
       string contractPubKey = GenerateIdBase64(16);
 
-      // TODO: Write pending storage
+      // Write pending storage
+      PendingObject pending = new PendingObject()
+      {
+        clientPubKey = clientPubKey,
+        contractPubKey = contractPubKey,
+        userWalletHash = userWalletHash,
+        payTokenHash = payTokenHash,
+        payTokenAmount = payTokenAmount,
+        gasAmount = gasAmount,
+        bhNftId = bhNftId,
+        slot1NftHash = slot1NftHash,
+        slot1NftId = slot1NftId,
+        slot2NftHash = slot2NftHash,
+        slot2NftId = slot2NftId,
+        slot3NftHash = slot3NftHash,
+        slot3NftId = slot3NftId,
+        slot4NftHash = slot4NftHash,
+        slot4NftId = slot4NftId
+      };
+      PendingStorage.Put(pending);
 
       // return clientPubKey and ContractPubKey
       return new string[2] { clientPubKey, contractPubKey };

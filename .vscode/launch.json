@@ -19,7 +19,11 @@
         {
           "account": "@owner",
           "scopes": "CalledByEntry, CustomContracts",
-          "allowedcontracts": ["0xd2a4cff31913016155e38e474a2c06d08be276cf"] // GAS contract hash
+          "allowedcontracts": [
+            "0xd2a4cff31913016155e38e474a2c06d08be276cf", // GAS
+            "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5", // NEO
+            "0x92fb231897765ef369b0e48428576aa68dabe3bd" // HARDENED changing every build
+          ]
         }
       ],
       "checkpoint": "${workspaceFolder}/checkpoints/hardened-deployed.neoxp-checkpoint"

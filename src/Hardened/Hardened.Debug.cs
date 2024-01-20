@@ -7,6 +7,7 @@ using System.Numerics;
 using static Hardened.Helpers;
 using static Hardened.Transfer;
 
+#pragma warning disable CS8625 
 namespace Hardened
 {
   public partial class Hardened
@@ -22,6 +23,7 @@ namespace Hardened
       Debug_Transfer();
       Debug_ManageAdmin();
       Debug_FeeUpdate();
+      Debug_PreInfusion_Mint();
     }
     private static void Debug_Helpers()
     {
@@ -92,7 +94,72 @@ namespace Hardened
       Assert_UpdatedFeeStructure(bTokenMintCost, bTokenUpdateCost, gasMintCost, gasUpdateCost, walletPoolHash);
       Runtime.Notify("Updated Fee Structure: case 2", new object[] { FeeStructureStorage.Get() });
     }
+    private static void Debug_PreInfusion_Mint()
+    {
+      // Case 1: PreInfusion with unmatched last 4 digit of clientPubKey and wallet address
+      try
+      {
+        PreInfusion(GenerateIdBase64(16), NEO.Hash, 10, null, null, null, null, null, null, null, null, null);
+      }
+      catch (Exception e)
+      {
+        Assert(GetExceptionMessage(e) == E_01, "Expected: " + E_01);
+      }
 
+      // Prepare PreInfusion clientPubKey to be matched with wallet address
+      string clientPubKey = GenerateIdBase64(16);
+      clientPubKey = clientPubKey.Substring(0, clientPubKey.Length - 4);
+      string userWalletAddress = owner.ToAddress();
+      clientPubKey += userWalletAddress.Substring(userWalletAddress.Length - 4);
+
+      // Mint 5 NFTs for use in the mint scenarios
+      for (int i = 1; i <= 5; i++)
+        Mint($"testNft_{i}", new HardenedState()
+        {
+          Owner = owner,
+          Name = $"testNft_{i}Name",
+        });
+
+      // Case 2: Mint with no NFTs in any slots
+      string[] clientAndContractPubKey;
+      try
+      {
+        clientAndContractPubKey = PreInfusion(clientPubKey, NEO.Hash, 10, null, null, null, null, null, null, null, null, null);
+      }
+      catch (Exception e)
+      {
+        Assert(GetExceptionMessage(e) == E_02, "Expected: " + E_02);
+      }
+
+      // Case 3: Mint with full NFT slots and one slot
+      clientAndContractPubKey = PreInfusion(clientPubKey, NEO.Hash, 20, null, Runtime.ExecutingScriptHash, "testNft_1", Runtime.ExecutingScriptHash, "testNft_2", Runtime.ExecutingScriptHash, "testNft_3", Runtime.ExecutingScriptHash, "testNft_4");
+      PendingObject fullNftObject = PendingStorage.Get(clientAndContractPubKey[0], clientAndContractPubKey[1]);
+      Runtime.Notify("fullNftObject", new object[] { fullNftObject });
+
+      clientAndContractPubKey = PreInfusion(clientPubKey, NEO.Hash, 30, null, Runtime.ExecutingScriptHash, "testNft_5", null, null, null, null, null, null);
+      PendingObject oneNftObject = PendingStorage.Get(clientAndContractPubKey[0], clientAndContractPubKey[1]);
+      Runtime.Notify("oneNftObject", new object[] { oneNftObject });
+
+      List<Map<string, object>> pendingListAll = PendingStorage.ListAll(0, 5);
+      Runtime.Notify("pendingListAll", new object[] { pendingListAll });
+      Assert(pendingListAll.Count == 2, $"ERROR: Expected 2 all pending but got {pendingListAll.Count}");
+
+      // Case 4: Get pending list with owner wallet
+      List<Map<string, object>> pendingListByOwnerWallet = PendingStorage.ListByWallet(owner, 0, 5);
+      Runtime.Notify("pendingListByOwnerWallet", new object[] { pendingListByOwnerWallet });
+      Assert(pendingListByOwnerWallet.Count == 2, $"ERROR: Expected 2 owner pending but got {pendingListByOwnerWallet.Count}");
+
+      // Case 5: Get pending list with admin wallet
+      List<Map<string, object>> pendingListByAdmin1Wallet = PendingStorage.ListByWallet(admin1, 0, 5);
+      Runtime.Notify("pendingListByAdmin1Wallet", new object[] { pendingListByAdmin1Wallet });
+      Assert(pendingListByAdmin1Wallet.Count == 0, $"ERROR: Expected 0 admin pending but got {pendingListByAdmin1Wallet.Count}");
+
+      // Case 6: Delete one pending
+      PendingStorage.Delete(clientAndContractPubKey[0], clientAndContractPubKey[1]);
+      pendingListAll = PendingStorage.ListAll(0, 5);
+      Runtime.Notify("pendingListAll", new object[] { pendingListAll });
+      Assert(pendingListAll.Count == 1, $"ERROR: Expected 1 all pending but got {pendingListAll.Count}");
+    }
     private static void Assert_DefaultFeeStructure()
     {
       FeeStructure defaultFeeStructure = FeeStructureStorage.Get();
@@ -102,7 +169,6 @@ namespace Hardened
       Assert(defaultFeeStructure.gasUpdateCost == defaultGasUpdateCost, "Expected defaultBTokenMintCost");
       Assert(defaultFeeStructure.walletPoolHash == Runtime.ExecutingScriptHash, "Expected Runtime.ExecutingScriptHash");
     }
-
     private static void Assert_UpdatedFeeStructure(BigInteger bTokenMintCost, BigInteger bTokenUpdateCost, BigInteger gasMintCost, BigInteger gasUpdateCost, UInt160 walletPoolHash)
     {
       FeeStructure updatedFeeStructure = FeeStructureStorage.Get();
@@ -111,6 +177,10 @@ namespace Hardened
       Assert(updatedFeeStructure.gasMintCost == gasMintCost, $"Expected {gasMintCost}");
       Assert(updatedFeeStructure.gasUpdateCost == gasUpdateCost, $"Expected {gasUpdateCost}");
       Assert(updatedFeeStructure.walletPoolHash == walletPoolHash, $"Expected {(ByteString)walletPoolHash}");
+    }
+    private static string GetExceptionMessage(Exception e)
+    {
+      return (string)StdLib.Deserialize(StdLib.Serialize(e));
     }
   }
 }
