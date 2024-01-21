@@ -40,27 +40,25 @@ namespace Hardened
       bool isMintRequest = true;
       FeeStructure feeStructure = FeeStructureStorage.Get();
       // Destination of locking tokens and NFTs.
-      UInt160 lockedDestinationHash = Runtime.ExecutingScriptHash; // This contract address
+      UInt160 bhContractHash = Runtime.ExecutingScriptHash; // This contract address
 
       if (!IsEmpty(bhNftId)) // Update
       {
         isMintRequest = false;
-        HardenedState bhNftState = GetState(bhNftId);
-        Assert(bhNftState.Owner == userWalletHash, $"Error: No ownership on {bhNftId}");
-        Safe11Transfer(Runtime.ExecutingScriptHash, lockedDestinationHash, bhNftId); // transfer to lock
+        Safe11Transfer(bhContractHash, bhContractHash, bhNftId); // transfer to lock
       }
-      Safe17Transfer(payTokenHash, userWalletHash, lockedDestinationHash, payTokenAmount);
+      Safe17Transfer(payTokenHash, userWalletHash, bhContractHash, payTokenAmount);
       // Transfer gas with amount set by admin
       BigInteger gasAmount = feeStructure.gasMintCost;
       if (!isMintRequest)
         gasAmount = feeStructure.gasUpdateCost;
-      Safe17Transfer(GAS.Hash, userWalletHash, lockedDestinationHash, gasAmount);
+      Safe17Transfer(GAS.Hash, userWalletHash, bhContractHash, gasAmount);
       // Transfer NFTs to lock
       Assert(!IsEmpty(slot1NftId) || !IsEmpty(slot2NftId) || !IsEmpty(slot3NftId) || !IsEmpty(slot4NftId), E_02);
-      if (!IsEmpty(slot1NftId)) Safe11Transfer(slot1NftHash, lockedDestinationHash, slot1NftId);
-      if (!IsEmpty(slot2NftId)) Safe11Transfer(slot2NftHash, lockedDestinationHash, slot2NftId);
-      if (!IsEmpty(slot3NftId)) Safe11Transfer(slot3NftHash, lockedDestinationHash, slot3NftId);
-      if (!IsEmpty(slot4NftId)) Safe11Transfer(slot4NftHash, lockedDestinationHash, slot4NftId);
+      if (!IsEmpty(slot1NftId)) Safe11Transfer(slot1NftHash, bhContractHash, slot1NftId);
+      if (!IsEmpty(slot2NftId)) Safe11Transfer(slot2NftHash, bhContractHash, slot2NftId);
+      if (!IsEmpty(slot3NftId)) Safe11Transfer(slot3NftHash, bhContractHash, slot3NftId);
+      if (!IsEmpty(slot4NftId)) Safe11Transfer(slot4NftHash, bhContractHash, slot4NftId);
 
       // Generate contractPubKey (PubKey2)
       string contractPubKey = GenerateIdBase64(16);
@@ -92,17 +90,42 @@ namespace Hardened
 
     public static void CancelInfusion(string clientPubKey, string contractPubKey)
     {
+      long transactionFee = Runtime.GasLeft;
+      bool isAdmin = true;
       // get pending storage
+      PendingObject pending = PendingStorage.Get(clientPubKey, contractPubKey);
       if (!IsAdmin())
       {
-        // validate the ownership of this pending storage
+        isAdmin = false;
+        Assert(Runtime.CheckWitness(pending.userWalletHash), E_03);
       }
-      // delete pending storage
+      // Destination of locking tokens and NFTs.
+      UInt160 bhContrachHash = Runtime.ExecutingScriptHash; // This contract address
+      // Returning of locked assets.
+      if (!IsEmpty(pending.bhNftId)) Safe11Transfer(bhContrachHash, pending.userWalletHash, pending.bhNftId); // BH NFT
+      if (!IsEmpty(pending.slot1NftId)) Safe11Transfer(pending.slot1NftHash, pending.userWalletHash, pending.slot1NftId); // Slot 1 NFT
+      if (!IsEmpty(pending.slot2NftId)) Safe11Transfer(pending.slot2NftHash, pending.userWalletHash, pending.slot2NftId); // Slot 2 NFT
+      if (!IsEmpty(pending.slot3NftId)) Safe11Transfer(pending.slot3NftHash, pending.userWalletHash, pending.slot3NftId); // Slot 3 NFT
+      if (!IsEmpty(pending.slot4NftId)) Safe11Transfer(pending.slot4NftHash, pending.userWalletHash, pending.slot4NftId); // Slot 4 NFT
+      Safe17Transfer(pending.payTokenHash, bhContrachHash, pending.userWalletHash, pending.payTokenAmount); // Pay Token
+      BigInteger refundGas = pending.gasAmount; // Prepare full refund amount
 
-      // send back nft
-      // send back pay token
-      // if user invoke this tx, send back full gas
-      // if admin invoke this tx, send back (full gas - this tx gas fee)
+      // Delete pending storage
+      PendingStorage.Delete(clientPubKey, contractPubKey);
+
+      // Refund GAS 
+      if (isAdmin)
+      {
+        refundGas -= transactionFee;
+        // Case admin invoke this tx, refun partial (full gas - this tx gas fee) GAS.
+        if (refundGas > 0)
+          Safe17Transfer(GAS.Hash, bhContrachHash, pending.userWalletHash, refundGas);
+      }
+      else
+      {
+        // Case user invoke this tx, refund full GAS.
+        Safe17Transfer(GAS.Hash, bhContrachHash, pending.userWalletHash, refundGas);
+      }
     }
 
     public static void Unfuse(string bhNftId)

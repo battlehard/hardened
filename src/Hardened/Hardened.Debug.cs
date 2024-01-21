@@ -94,8 +94,10 @@ namespace Hardened
       Assert_UpdatedFeeStructure(bTokenMintCost, bTokenUpdateCost, gasMintCost, gasUpdateCost, walletPoolHash);
       Runtime.Notify("Updated Fee Structure: case 2", new object[] { FeeStructureStorage.Get() });
     }
-    private static void Debug_PreInfusion_Mint()
+    private static List<string[]> Debug_PreInfusion_Mint()
     {
+      List<string[]> pendingMintList = new List<string[]>();
+
       // Case 1: PreInfusion with unmatched last 4 digit of clientPubKey and wallet address
       try
       {
@@ -117,8 +119,16 @@ namespace Hardened
         Mint($"testNft_{i}", new HardenedState()
         {
           Owner = owner,
-          Name = $"testNft_{i}Name",
+          State = State.Ready,
         });
+
+      // Try checking NFT state
+      HardenedState bhNft1 = GetState("testNft_1");
+      Runtime.Notify("NFT 1 state", new object[] { bhNft1 });
+      // Try checking NFT properties
+      Hardened h = new Hardened();
+      Map<string, object> bhNft1Properties = h.Properties("testNft_1");
+      Runtime.Notify("NFT 1 properties", new object[] { bhNft1Properties });
 
       // Case 2: Mint with no NFTs in any slots
       string[] clientAndContractPubKey;
@@ -133,6 +143,7 @@ namespace Hardened
 
       // Case 3: Mint with full NFT slots and one slot
       clientAndContractPubKey = PreInfusion(clientPubKey, NEO.Hash, 20, null, Runtime.ExecutingScriptHash, "testNft_1", Runtime.ExecutingScriptHash, "testNft_2", Runtime.ExecutingScriptHash, "testNft_3", Runtime.ExecutingScriptHash, "testNft_4");
+      pendingMintList.Add(clientAndContractPubKey);
       PendingObject fullNftObject = PendingStorage.Get(clientAndContractPubKey[0], clientAndContractPubKey[1]);
       Runtime.Notify("fullNftObject", new object[] { fullNftObject });
 
@@ -155,10 +166,12 @@ namespace Hardened
       Assert(pendingListByAdmin1Wallet.Count == 0, $"ERROR: Expected 0 admin pending but got {pendingListByAdmin1Wallet.Count}");
 
       // Case 6: Delete one pending
-      PendingStorage.Delete(clientAndContractPubKey[0], clientAndContractPubKey[1]);
+      CancelInfusion(clientAndContractPubKey[0], clientAndContractPubKey[1]); // Cancel oneNftObject infusion
       pendingListAll = PendingStorage.ListAll(0, 5);
       Runtime.Notify("pendingListAll", new object[] { pendingListAll });
       Assert(pendingListAll.Count == 1, $"ERROR: Expected 1 all pending but got {pendingListAll.Count}");
+
+      return pendingMintList;
     }
     private static void Assert_DefaultFeeStructure()
     {

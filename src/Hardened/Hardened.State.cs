@@ -12,6 +12,25 @@ namespace Hardened
   public class HardenedState : Nep11TokenState
   {
     // TODO: add properties
+    public string Image;
+    public string State;
+    public UInt160[] Contract; // Contract origin
+    public UInt160 Slot1NftHash;
+    public string Slot1NftId;
+    public UInt160 Slot2NftHash;
+    public string Slot2NftId;
+    public UInt160 Slot3NftHash;
+    public string Slot3NftId;
+    public UInt160 Slot4NftHash;
+    public string Slot4NftId;
+    public Map<string, object> Meta;
+    public Map<string, object> Attributes;
+  }
+
+  public class State
+  {
+    public const string Ready = "Ready";
+    public const string Blueprint = "Blueprint";
   }
 
   public class FeeStructure

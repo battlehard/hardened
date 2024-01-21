@@ -11,7 +11,8 @@ namespace Hardened
     private static readonly BigInteger defaultGasMintCost = 1_00000000;
     private static readonly BigInteger defaultGasUpdateCost = 0_50000000;
     // ERROR MESSAGE
-    private const string E_01 = "Error: The last 4 digits of wallet address and clientPubKey is not match";
-    private const string E_02 = "Error: PreInfusion for Mint must have at least one NFT in any slots";
+    private const string E_01 = "ERROR: The last 4 digits of wallet address and clientPubKey is not match";
+    private const string E_02 = "ERROR: PreInfusion for Mint must have at least one NFT in any slots";
+    private const string E_03 = "ERROR: No ownership on pending infusion";
   }
 }

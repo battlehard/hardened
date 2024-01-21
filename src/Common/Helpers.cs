@@ -46,7 +46,7 @@ namespace Hardened
 
     public static string GenerateIdBase64(int bytesLength)
     {
-      Assert(bytesLength > 0 && bytesLength <= 16, "Error: bytesLength must be 1 to 16");
+      Assert(bytesLength > 0 && bytesLength <= 16, "ERROR: bytesLength must be 1 to 16");
       return StdLib.Base64Encode((ByteString)Runtime.GetRandom().ToByteArray().Range(0, bytesLength));
     }
 

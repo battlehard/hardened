@@ -18,14 +18,20 @@
       "signers": [
         {
           "account": "@owner",
-          "scopes": "CalledByEntry, CustomContracts",
-          "allowedcontracts": [
-            "0xd2a4cff31913016155e38e474a2c06d08be276cf", // GAS
-            "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5", // NEO
-            "0x92fb231897765ef369b0e48428576aa68dabe3bd" // HARDENED changing every build
-          ]
+          "scopes": "Global"
         }
       ],
+      // "signers": [
+      //   {
+      //     "account": "@owner",
+      //     "scopes": "CalledByEntry, CustomContracts",
+      //     "allowedcontracts": [
+      //       "0xd2a4cff31913016155e38e474a2c06d08be276cf", // GAS
+      //       "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5", // NEO
+      //       "0x742b0681e618061b78e1067aa20cf6ec20d74316" // HARDENED changing every build
+      //     ]
+      //   }
+      // ],
       "checkpoint": "${workspaceFolder}/checkpoints/hardened-deployed.neoxp-checkpoint"
     },
     {
@@ -50,6 +56,25 @@
           null,
           null
         ]
+      },
+      "storage": [],
+      "signers": [
+        {
+          "account": "@owner",
+          "scopes": "Global"
+        }
+      ],
+      "checkpoint": "${workspaceFolder}/checkpoints/hardened-deployed.neoxp-checkpoint"
+    },
+    {
+      "name": "TestCancelInfusion",
+      "type": "neo-contract",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/Hardened/bin/sc/Hardened.nef",
+      "neo-express": "${workspaceFolder}/default.neo-express",
+      "invocation": {
+        "operation": "cancelInfusion",
+        "args": ["clientPubKey", "contractPubKey"]
       },
       "storage": [],
       "signers": [
