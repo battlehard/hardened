@@ -15,6 +15,7 @@ namespace Hardened
     private static readonly byte[] Prefix_Pending = new byte[] { 0x01, 0x02 };
     private static readonly byte[] Prefix_Wallet_Filter = new byte[] { 0x01, 0x03 };
     private static readonly byte[] Prefix_Fee_Structure = new byte[] { 0x02, 0x00 };
+    private static readonly byte[] Prefix_Blueprint_Image_Url = new byte[] { 0x02, 0x01 };
 
     /// <summary>
     /// Class <c>AdminHashesStorage</c>

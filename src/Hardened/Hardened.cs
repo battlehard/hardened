@@ -130,15 +130,18 @@ namespace Hardened
 
     public static void Unfuse(string bhNftId)
     {
-      // validate bh nft ownership
-      // get BH NFT information
-      // validate BH NFT status, it must ready
+      HardenedState nftState = ValidateOwnership(bhNftId);
+      Assert(nftState.state == State.Ready, E_05);
+      if (!IsEmpty(nftState.slot1NftId)) Safe11Transfer(nftState.slot1NftHash, nftState.Owner, nftState.slot1NftId); // Slot 1 NFT
+      if (!IsEmpty(nftState.slot2NftId)) Safe11Transfer(nftState.slot2NftHash, nftState.Owner, nftState.slot2NftId); // Slot 2 NFT
+      if (!IsEmpty(nftState.slot3NftId)) Safe11Transfer(nftState.slot3NftHash, nftState.Owner, nftState.slot3NftId); // Slot 3 NFT
+      if (!IsEmpty(nftState.slot4NftId)) Safe11Transfer(nftState.slot4NftHash, nftState.Owner, nftState.slot4NftId); // Slot 4 NFT
 
-      // transfer all locked NFT back
-      // update BH NFT
-      //  - status to blueprint
-      //  - image to blueprint
-      //  - strip stat in properties Meta.sync, Attributes.nature
+      nftState.state = State.Blueprint;
+      nftState.image = GetBlueprintImageUrl();
+      nftState.meta.Remove("sync");
+      nftState.attributes.Remove("nature");
+      UpdateState(bhNftId, nftState);
     }
 
     public static void BurnInfusion(string bhNftId)

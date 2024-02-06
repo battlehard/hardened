@@ -53,18 +53,25 @@ namespace Hardened
       Map<string, object> map = new();
       map["ownerAddress"] = token.Owner.ToAddress();
       map["name"] = tokenId;
-      map["state"] = token.State;
-      map["slot1NftHash"] = token.Slot1NftHash;
-      map["slot1NftId"] = token.Slot1NftId;
-      map["slot2NftHash"] = token.Slot2NftHash;
-      map["slot2NftId"] = token.Slot2NftId;
-      map["slot3NftHash"] = token.Slot3NftHash;
-      map["slot3NftId"] = token.Slot3NftId;
-      map["slot4NftHash"] = token.Slot4NftHash;
-      map["slot4NftId"] = token.Slot4NftId;
-      map["meta"] = token.Meta;
-      map["attributes"] = token.Attributes;
+      map["state"] = token.state;
+      map["slot1NftHash"] = token.slot1NftHash;
+      map["slot1NftId"] = token.slot1NftId;
+      map["slot2NftHash"] = token.slot2NftHash;
+      map["slot2NftId"] = token.slot2NftId;
+      map["slot3NftHash"] = token.slot3NftHash;
+      map["slot3NftId"] = token.slot3NftId;
+      map["slot4NftHash"] = token.slot4NftHash;
+      map["slot4NftId"] = token.slot4NftId;
+      map["meta"] = token.meta;
+      map["attributes"] = token.attributes;
       return map;
+    }
+
+    [Safe]
+    private static string GetBlueprintImageUrl()
+    {
+      string url = (string)Storage.Get(Storage.CurrentContext, Prefix_Blueprint_Image_Url);
+      return url == null ? "/blueprint/" : url;
     }
   }
 }

@@ -24,6 +24,7 @@ namespace Hardened
       Debug_ManageAdmin();
       Debug_FeeUpdate();
       Debug_PreInfusion_Mint();
+      // TODO: Debug Unfuse and BurnInfusion
     }
     private static void Debug_Helpers()
     {
@@ -119,7 +120,7 @@ namespace Hardened
         Mint($"testNft_{i}", new HardenedState()
         {
           Owner = owner,
-          State = State.Ready,
+          state = State.Ready,
         });
 
       // Try checking NFT state

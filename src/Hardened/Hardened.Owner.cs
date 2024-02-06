@@ -31,5 +31,11 @@ namespace Hardened
       CheckOwner();
       ContractManagement.Update(nefFile, manifest, null);
     }
+
+    public static void SetBlueprintImageUrl(string url)
+    {
+      CheckOwner();
+      Storage.Put(Storage.CurrentContext, Prefix_Blueprint_Image_Url, url);
+    }
   }
 }

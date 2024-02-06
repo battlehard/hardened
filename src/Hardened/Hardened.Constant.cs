@@ -14,5 +14,7 @@ namespace Hardened
     private const string E_01 = "ERROR: The last 4 digits of wallet address and clientPubKey is not match";
     private const string E_02 = "ERROR: PreInfusion for Mint must have at least one NFT in any slots";
     private const string E_03 = "ERROR: No ownership on pending infusion";
+    private const string E_04 = "ERROR: No ownership on NFT";
+    private const string E_05 = "ERROR: NFT State must be Ready";
   }
 }
