@@ -132,10 +132,7 @@ namespace Hardened
     {
       HardenedState nftState = ValidateOwnership(bhNftId);
       Assert(nftState.state == State.Ready, E_05);
-      if (!IsEmpty(nftState.slot1NftId)) Safe11Transfer(nftState.slot1NftHash, nftState.Owner, nftState.slot1NftId); // Slot 1 NFT
-      if (!IsEmpty(nftState.slot2NftId)) Safe11Transfer(nftState.slot2NftHash, nftState.Owner, nftState.slot2NftId); // Slot 2 NFT
-      if (!IsEmpty(nftState.slot3NftId)) Safe11Transfer(nftState.slot3NftHash, nftState.Owner, nftState.slot3NftId); // Slot 3 NFT
-      if (!IsEmpty(nftState.slot4NftId)) Safe11Transfer(nftState.slot4NftHash, nftState.Owner, nftState.slot4NftId); // Slot 4 NFT
+      ReturnLockNFTs(nftState);
 
       nftState.state = State.Blueprint;
       nftState.image = GetBlueprintImageUrl();
@@ -146,12 +143,13 @@ namespace Hardened
 
     public static void BurnInfusion(string bhNftId)
     {
-      // validate nft ownership
-      // get BH NFT information
-      // validate BH NFT status whether it is ready or not. 
-
-      // if ready, transfer all locked NFT back
-      // burn BH NFT
+      HardenedState nftState = ValidateOwnership(bhNftId);
+      // If ready return locked NFTs
+      if (nftState.state == State.Ready)
+      {
+        ReturnLockNFTs(nftState);
+      }
+      Burn(bhNftId);
     }
 
     public static void OnNEP11Payment(UInt160 from, BigInteger amount, ByteString tokenId, object[] data)
