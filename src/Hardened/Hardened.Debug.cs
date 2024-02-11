@@ -16,17 +16,21 @@ namespace Hardened
     private static UInt160 admin1 = "Nh9XK6sZ6vkPu9N2L9GxnkogxXKVCgDMws".AddressToScriptHash();
     private static UInt160 admin2 = "NQbHe4RTkzwGD3tVYsTcHEhxWpN4ZEuMuG".AddressToScriptHash();
 
-    public static void TestSuite()
+    public static void TestNonCore()
     {
       CheckContractAuthorization();
       Debug_Helpers();
       Debug_Transfer();
       Debug_ManageAdmin();
       Debug_FeeUpdate();
+    }
+    public static void TestCore()
+    {
+      CheckContractAuthorization();
       List<string[]> pendingMintList = Debug_PreInfusion_Mint();
       Debug_PendingInfusion();
-      Debug_InfusionMint(pendingMintList);
-      // TODO: Debug Unfuse and BurnInfusion
+      Debug_InfusionMintAndInfusionUpdate(pendingMintList);
+      Debug_UnfuseAndBurnInfusion();
     }
     private static void Debug_Helpers()
     {
@@ -191,7 +195,7 @@ namespace Hardened
       PendingInfusion(0, 10, new UInt160[] { owner });
       PendingInfusion(0, 10, new UInt160[] { admin1, admin2, owner });
     }
-    private static void Debug_InfusionMint(List<string[]> pendingMintList)
+    private static void Debug_InfusionMintAndInfusionUpdate(List<string[]> pendingMintList)
     {
       // {"Name":"Flamefury","Image":"https://battle-hardened-cache.b-cdn.net/legends/Alchemist%20Reaver.png","State":"READY","Project":"0x0000000000000000000000000000000000000000","Contract":["0x5555555555555555555555555555555555555555","0x6666666666666666666666666666666666666666"],"Meta":{"Seed":"f83e1c3d-4465-4b29-a3bb-fa457e30d6c8","Skill":[[10,8],[6,12]],"Sync":[80,90,85,75],"Level":3,"Taste":"777","Rarity":"Legendary","Rank":5},"Attributes":{"Primary":"Fire","Secondary":"None","Aura":"Heat","Nature":["Dragon","Elemental"],"Stats":{"Attack":12,"Health":10,"Armor":8,"Speed":13,"Accuracy":11,"Luck":9}}}
       string base58Properties = "GeV17U2Mre7DzzGVYjbdyGVJjbP8NYr69JhwQMQA2zbHpBE5RSWMH3mC7KfWPoQZB7k9i3eJVxsfLGXVjKNAsk3H4Wbyq3CzZA95XhJoUKJuZM6ZainnBtnmnknoS6VxMgHnofwan5pAcz9uQe3Lfpfqp6Uvbn6H6s3wSH3nhiCvYKpc7SjtvwmuerK1yH3DAMX2wqBHNSe63ssppXmBj13qRAEvz3abxx1tcKjVT8MVTktXVvaJKfWh15Q2mHUwnBx6v1yb3Ca8QbKxbgxA83d94PDBkP5NpbimJLAYJAHAiWdpYDWSQzaHViU71xv6iRsqN2JdTSQCrDX4sH7up3nRnCqfAna7wN7g4R1cG8zGSZ35hnYJzdMAqxeA4bV2ivkUepi3Rp9aGb4BALPbZ7Tq2TNJGhAtCrrc6gmGGubJjDL21ziYVbsS521vDHM79joZRx1AaBm5BCxZjAQ9qZoNcTwx7JGRhbdeArsgSrtXdDhvC9DACUdydK7719bkRxo4r4b5Bz5RA4RJnV2yJwVXPh8URf2Fu4WnYqnqaabW1BcLmWTzj4H4zzXVpiQRpUHJ7hXpQVdHvk7DuFvWGKUcBekiWTDBZdok3G8utv39FZvuxF3c1Gbu3A7mQKRnKRxWn73GKP2PXwEZFFtb7f7kFSDmkGdPfgznYHef2YpmuzjHERSmuCMhC1EdyKYdQ3JUMkva4WEBqttCeMUUbYUHho9aEZxjDed9cMPBX27STLvsPjKnEjtuMcLEjHxuDgcQEYf4pej8UMReMJa4HdmwYUvw7aNrMv9qukMwLXw4LJZZEqHFECr2Q";
@@ -206,6 +210,31 @@ namespace Hardened
       HardenedState secondMinted = GetState("Flamefury#1");
       Runtime.Notify("firstMinted State", new object[] { firstMinted });
       Runtime.Notify("secondMinted State", new object[] { secondMinted });
+
+      // TODO: Test InfusionUpdate
+    }
+    private static void Debug_UnfuseAndBurnInfusion()
+    {
+      string nftId = "Flamefury";
+      Runtime.Notify("Ready State", new object[] { GetState(nftId) });
+      Unfuse(nftId);
+      HardenedState unfusedState = GetState(nftId);
+      Assert(unfusedState.meta.HasKey("Sync") == false, "Error: Meta.Sync must not existing");
+      Assert(unfusedState.attributes.HasKey("Nature") == false, "Error: Attributes.Nature must not existing");
+      Runtime.Notify("Blueprint State", new object[] { unfusedState });
+
+      string burnId = "Flamefury#1";
+      BurnInfusion(burnId);
+      bool isNotFound = false;
+      try
+      {
+        GetState(burnId);
+      }
+      catch (Exception)
+      {
+        isNotFound = true;
+      }
+      Assert(isNotFound, "Error: NFT has not been burnt");
     }
     private static void Assert_DefaultFeeStructure()
     {

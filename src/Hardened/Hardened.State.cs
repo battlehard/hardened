@@ -13,6 +13,7 @@ namespace Hardened
   {
     public string image;
     public string state;
+    public int level;
     public UInt160 project;
     public UInt160[] contract; // Contract origin
     public UInt160 slot1NftHash;

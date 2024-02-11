@@ -55,10 +55,49 @@ namespace Hardened
       Safe17Transfer(GAS.Hash, userWalletHash, bhContractHash, gasAmount);
       // Transfer NFTs to lock
       Assert(!IsEmpty(slot1NftId) || !IsEmpty(slot2NftId) || !IsEmpty(slot3NftId) || !IsEmpty(slot4NftId), E_02);
-      if (!IsEmpty(slot1NftId)) Safe11Transfer(slot1NftHash, bhContractHash, slot1NftId);
-      if (!IsEmpty(slot2NftId)) Safe11Transfer(slot2NftHash, bhContractHash, slot2NftId);
-      if (!IsEmpty(slot3NftId)) Safe11Transfer(slot3NftHash, bhContractHash, slot3NftId);
-      if (!IsEmpty(slot4NftId)) Safe11Transfer(slot4NftHash, bhContractHash, slot4NftId);
+
+      // Validate provided NFT only for Update case
+      if (!isMintRequest)
+      {
+        HardenedState nft = GetState(bhNftId);
+        Assert(nft.state == State.Ready || nft.state == State.Blueprint, E_08);
+        if (nft.state == State.Ready)
+        {
+          // If BH NFT is READY, transfer only new NFT.
+          if (IsEmpty(nft.slot1NftId) && !IsEmpty(slot1NftId)) Safe11Transfer(slot1NftHash, bhContractHash, slot1NftId);
+          if (IsEmpty(nft.slot2NftId) && !IsEmpty(slot2NftId)) Safe11Transfer(slot2NftHash, bhContractHash, slot2NftId);
+          if (IsEmpty(nft.slot3NftId) && !IsEmpty(slot3NftId)) Safe11Transfer(slot3NftHash, bhContractHash, slot3NftId);
+          if (IsEmpty(nft.slot4NftId) && !IsEmpty(slot4NftId)) Safe11Transfer(slot4NftHash, bhContractHash, slot4NftId);
+        }
+        else
+        {
+          // If BH NFT is BLUEPRINT, allow transfer NFT pieces up to level.
+          int transferredPieces = 0;
+          if (!IsEmpty(slot1NftId) && transferredPieces < nft.level)
+          {
+            Safe11Transfer(slot1NftHash, bhContractHash, slot1NftId); transferredPieces++;
+          }
+          if (!IsEmpty(slot2NftId) && transferredPieces < nft.level)
+          {
+            Safe11Transfer(slot2NftHash, bhContractHash, slot2NftId); transferredPieces++;
+          }
+          if (!IsEmpty(slot3NftId) && transferredPieces < nft.level)
+          {
+            Safe11Transfer(slot3NftHash, bhContractHash, slot3NftId); transferredPieces++;
+          }
+          if (!IsEmpty(slot4NftId) && transferredPieces < nft.level)
+          {
+            Safe11Transfer(slot4NftHash, bhContractHash, slot4NftId); transferredPieces++;
+          }
+        }
+      }
+      else
+      {
+        if (!IsEmpty(slot1NftId)) Safe11Transfer(slot1NftHash, bhContractHash, slot1NftId);
+        if (!IsEmpty(slot2NftId)) Safe11Transfer(slot2NftHash, bhContractHash, slot2NftId);
+        if (!IsEmpty(slot3NftId)) Safe11Transfer(slot3NftHash, bhContractHash, slot3NftId);
+        if (!IsEmpty(slot4NftId)) Safe11Transfer(slot4NftHash, bhContractHash, slot4NftId);
+      }
 
       // Generate contractPubKey (PubKey2)
       string contractPubKey = GenerateIdBase64(16);
@@ -136,8 +175,8 @@ namespace Hardened
 
       nftState.state = State.Blueprint;
       nftState.image = GetBlueprintImageUrl();
-      nftState.meta.Remove("sync");
-      nftState.attributes.Remove("nature");
+      nftState.meta.Remove("Sync");
+      nftState.attributes.Remove("Nature");
       UpdateState(bhNftId, nftState);
     }
 

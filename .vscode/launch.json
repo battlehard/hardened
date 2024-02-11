@@ -5,13 +5,32 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "TestSuite",
+      "name": "TestNonCore",
       "type": "neo-contract",
       "request": "launch",
       "program": "${workspaceFolder}/src/Hardened/bin/sc/Hardened.nef",
       "neo-express": "${workspaceFolder}/default.neo-express",
       "invocation": {
-        "operation": "testSuite",
+        "operation": "testNonCore",
+        "args": []
+      },
+      "storage": [],
+      "signers": [
+        {
+          "account": "@owner",
+          "scopes": "Global"
+        }
+      ],
+      "checkpoint": "${workspaceFolder}/checkpoints/hardened-deployed.neoxp-checkpoint"
+    },
+    {
+      "name": "TestCore",
+      "type": "neo-contract",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/Hardened/bin/sc/Hardened.nef",
+      "neo-express": "${workspaceFolder}/default.neo-express",
+      "invocation": {
+        "operation": "testCore",
         "args": []
       },
       "storage": [],

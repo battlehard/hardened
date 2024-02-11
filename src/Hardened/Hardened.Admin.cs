@@ -89,22 +89,24 @@ namespace Hardened
       {
         contractList.Add(contracts[i].HexStringToUInt160());
       }
+      int level = GetLevel(pending);
       HardenedState mintingNft = new HardenedState()
       {
         Owner = pending.userWalletHash,
         Name = (string)map["Name"],
         image = (string)map["Image"],
         state = State.Ready, // Minted state is always "Ready".
+        level = level,
         project = ((string)map["Project"]).HexStringToUInt160(),
         contract = contractList,
         slot1NftHash = pending.slot1NftHash,
-        slot1NftId = pending.slot1NftId,
+        slot1NftId = pending.slot1NftId!,
         slot2NftHash = pending.slot2NftHash,
-        slot2NftId = pending.slot2NftId,
+        slot2NftId = pending.slot2NftId!,
         slot3NftHash = pending.slot3NftHash,
-        slot3NftId = pending.slot3NftId,
+        slot3NftId = pending.slot3NftId!,
         slot4NftHash = pending.slot4NftHash,
-        slot4NftId = pending.slot4NftId,
+        slot4NftId = pending.slot4NftId!,
         meta = (Map<string, object>)map["Meta"],
         attributes = (Map<string, object>)map["Attributes"]
       };
@@ -136,7 +138,8 @@ namespace Hardened
       string jsonString = StdLib.Base58Decode(base58Properties);
       Map<string, object> map = (Map<string, object>)StdLib.JsonDeserialize(jsonString);
 
-      HardenedState nftState = GetState(pending.bhNftId);
+      string bhNftId = pending.bhNftId;
+      HardenedState nftState = GetState(bhNftId);
       nftState.image = (string)map["Image"];
       nftState.state = State.Ready; // Updated successfully turn state into "Ready"
       nftState.slot1NftHash = pending.slot1NftHash;
@@ -152,6 +155,18 @@ namespace Hardened
 
       UpdateState(nftState.Name, nftState); // NFT Name and ID are identical
       PendingStorage.Delete(clientPubKey, contractPubKey);
+
+      // Return BH NFT to owner
+      Safe11Transfer(Runtime.ExecutingScriptHash, userWalletHash, bhNftId);
+    }
+    private static int GetLevel(PendingObject pending)
+    {
+      int level = 0;
+      if (pending.slot1NftId != null) level += 1;
+      if (pending.slot2NftId != null) level += 1;
+      if (pending.slot3NftId != null) level += 1;
+      if (pending.slot4NftId != null) level += 1;
+      return level;
     }
   }
 }

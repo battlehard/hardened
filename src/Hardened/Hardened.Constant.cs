@@ -18,5 +18,6 @@ namespace Hardened
     private const string E_05 = "ERROR: NFT State must be Ready";
     private const string E_06 = "ERROR: Provided pay token hash and amount must match data in the pending storage";
     private const string E_07 = "ERROR: Provided user wallet hash must match data in the pending storage";
+    private const string E_08 = "ERROR: Invalid NFT state";
   }
 }
