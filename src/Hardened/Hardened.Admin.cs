@@ -1,8 +1,10 @@
 ﻿using Neo;
 using Neo.SmartContract.Framework;
+using Neo.SmartContract.Framework.Native;
 using Neo.SmartContract.Framework.Services;
 using System.Numerics;
 using static Hardened.Helpers;
+using static Hardened.Transfer;
 
 namespace Hardened
 {
@@ -68,5 +70,56 @@ namespace Hardened
       }
       FeeStructureStorage.Put(updatingFeeStructure);
     }
+    public static void InfusionMint(string clientPubKey, string contractPubKey, UInt160 contractHash, UInt160 payTokenHash, BigInteger payTokenAmount, string base58Properties)
+    {
+      PendingObject pending = PendingStorage.Get(clientPubKey, contractPubKey);
+      // Pending object existing, check for matched pay token hash and amount
+      Assert(pending.payTokenHash == payTokenHash && pending.payTokenAmount == payTokenAmount, E_06);
+      // Transfer pay token from BH contract to provide contract hash
+      Safe17Transfer(pending.payTokenHash, Runtime.ExecutingScriptHash, contractHash, pending.payTokenAmount);
+      // Transfer Gas from BH contract to wallet pool
+      Safe17Transfer(GAS.Hash, Runtime.ExecutingScriptHash, FeeStructureStorage.Get().walletPoolHash!, pending.gasAmount);
+
+      string jsonString = StdLib.Base58Decode(base58Properties);
+      Map<string, object> map = (Map<string, object>)StdLib.JsonDeserialize(jsonString);
+      string state = (string)map["state"];
+      Assert(state == State.Ready || state == State.Blueprint, E_07);
+      List<UInt160> contractList = new List<UInt160>();
+      string[] contracts = (string[])map["contract"];
+      for (int i = 0; i < contracts.Length; i++)
+      {
+        contractList.Add(contracts[i].HexStringToUInt160());
+      }
+      HardenedState mintingNft = new HardenedState()
+      {
+        Owner = pending.userWalletHash,
+        Name = (string)map["name"],
+        image = (string)map["image"],
+        state = state,
+        contract = contractList,
+        slot1NftHash = pending.slot1NftHash,
+        slot1NftId = pending.slot1NftId,
+        slot2NftHash = pending.slot2NftHash,
+        slot2NftId = pending.slot2NftId,
+        slot3NftHash = pending.slot3NftHash,
+        slot3NftId = pending.slot3NftId,
+        slot4NftHash = pending.slot4NftHash,
+        slot4NftId = pending.slot4NftId,
+        meta = (Map<string, object>)map["meta"],
+        attributes = (Map<string, object>)map["attributes"]
+      };
+
+      // Checking unique tokenId
+      string tokenId = mintingNft.Name;
+      StorageMap tokenMap = new(Storage.CurrentContext, Prefix_Token);
+      // If tokenId existing, update to unique one.
+      if (tokenMap.Get(tokenId) != null)
+      {
+        mintingNft.Name = $"{mintingNft.Name}#{UniqueHeightStorage.Next()}";
+      }
+      Mint(mintingNft.Name, mintingNft);
+      PendingStorage.Delete(clientPubKey, contractPubKey);
+    }
   }
 }
+

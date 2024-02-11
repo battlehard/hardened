@@ -16,5 +16,7 @@ namespace Hardened
     private const string E_03 = "ERROR: No ownership on pending infusion";
     private const string E_04 = "ERROR: No ownership on NFT";
     private const string E_05 = "ERROR: NFT State must be Ready";
+    private const string E_06 = "ERROR: Provided pay token hash and amount must match data in pending storage";
+    private const string E_07 = $"ERROR: NFT state must be '{State.Ready}' or '{State.Blueprint}'";
   }
 }

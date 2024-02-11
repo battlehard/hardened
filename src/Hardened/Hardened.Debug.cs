@@ -12,9 +12,9 @@ namespace Hardened
 {
   public partial class Hardened
   {
-    private static UInt160 owner = ToScriptHash("NbMFc2fEpoF68KMRoJEhxQGTJUUVA5vqoe");
-    private static UInt160 admin1 = ToScriptHash("Nh9XK6sZ6vkPu9N2L9GxnkogxXKVCgDMws");
-    private static UInt160 admin2 = ToScriptHash("NQbHe4RTkzwGD3tVYsTcHEhxWpN4ZEuMuG");
+    private static UInt160 owner = "NbMFc2fEpoF68KMRoJEhxQGTJUUVA5vqoe".AddressToScriptHash();
+    private static UInt160 admin1 = "Nh9XK6sZ6vkPu9N2L9GxnkogxXKVCgDMws".AddressToScriptHash();
+    private static UInt160 admin2 = "NQbHe4RTkzwGD3tVYsTcHEhxWpN4ZEuMuG".AddressToScriptHash();
 
     public static void TestSuite()
     {
@@ -23,8 +23,9 @@ namespace Hardened
       Debug_Transfer();
       Debug_ManageAdmin();
       Debug_FeeUpdate();
-      Debug_PreInfusion_Mint();
+      List<string[]> pendingMintList = Debug_PreInfusion_Mint();
       Debug_PendingInfusion();
+      Debug_InfusionMint(pendingMintList);
       // TODO: Debug Unfuse and BurnInfusion
     }
     private static void Debug_Helpers()
@@ -86,7 +87,7 @@ namespace Hardened
       BigInteger bTokenUpdateCost = 1_00000000;
       BigInteger gasMintCost = 0_10000000;
       BigInteger gasUpdateCost = 0_05000000;
-      UInt160 walletPoolHash = ToScriptHash("Nh9XK6sZ6vkPu9N2L9GxnkogxXKVCgDMws");
+      UInt160 walletPoolHash = "Nh9XK6sZ6vkPu9N2L9GxnkogxXKVCgDMws".AddressToScriptHash();
       // Case 3: Updating with new fee structure
       FeeUpdate(bTokenMintCost, bTokenUpdateCost, gasMintCost, gasUpdateCost, walletPoolHash);
       Assert_UpdatedFeeStructure(bTokenMintCost, bTokenUpdateCost, gasMintCost, gasUpdateCost, walletPoolHash);
@@ -178,6 +179,10 @@ namespace Hardened
       Runtime.Notify("pendingListAll", new object[] { pendingListAll });
       Assert(pendingListAll.Count == 1, $"ERROR: Expected 1 all pending but got {pendingListAll.Count}");
 
+      // Preparation for InfusionMint
+      clientAndContractPubKey = PreInfusion(clientPubKey, NEO.Hash, 30, null, Runtime.ExecutingScriptHash, "testNft_5", null, null, null, null, null, null);
+      pendingMintList.Add(clientAndContractPubKey);
+
       return pendingMintList;
     }
     private static void Debug_PendingInfusion()
@@ -185,6 +190,21 @@ namespace Hardened
       PendingInfusion(0, 10, null);
       PendingInfusion(0, 10, new UInt160[] { owner });
       PendingInfusion(0, 10, new UInt160[] { admin1, admin2, owner });
+    }
+    private static void Debug_InfusionMint(List<string[]> pendingMintList)
+    {
+      // {"name":"hello","image":"url","state":"Ready","contract":["0xb3ccfca2bf5bab9cfae1c6c5b5df072579c4e138","0xb3ccfca2bf5bab9cfae1c6c5b5df072579c4e140"],"meta":{"seed":"s1","skill":[1,2,3],"sync":[7,8,9]},"attributes":{"primary":"main","skill":[1,2,3],"nature":["dragon","flying"],"stats":{"attack":1}}}
+      string base58Properties = "UyFyBjMcoxkd92LLGqjJm7rh3hgzvzoWbRCjuJm1DhapkZg5DT5Ruz8a4fmL44vSrUAJa5BYuZaquKoMq7n8qBHjponS9pU7XXCuH7Y9DpdkpNrjCTb4ufPCJh6NnnJcTwnZvkLEoPQfKK2eka48P2Gmi6qyL4cmdbg3GbZwDK1RCDSgpaEfnWFhwLaQAbdCBif9fRLGty1GYFzsk9RMDg16dYEieer1KYBUjF3T1LeUD6jNFL34oNtVoCEfB6cxwa36r11Wdb6MrEfKsbZgiWTqw3eGDq9ZMu42YEJXMeEqEUcPgurpyAdmNZdqzczxLRoWnqzSy7VaaaVkhc8F4TDuAXQuALuFVZEfozpAA7HFdGMoBKsCEzrpWZ8Q3GAvuqXswwmnFvGpcRr95kPoYaRGVdzyws8hzcXpakSQoPrTSy3gkjzPakxGJ66cj6sttUZ9znoo88qckkc8wQkqG3phtsmPvbRFetmGxT7i8EDYrHV8YyzhVep9whbHsvijJvhCawieiAUdoCUoyov5wqPtKcg5hvc78QEjLo9sDWNT1tA3BfdcWEsZoqKYCyDoNCQxyiNXcbGqonDpwp6EqhFLeZAUw3By7P5axdfGeSL68arRzabBb4RTUs4MRNhBwkrSrqEgPX3eK6GAjf41CvaR4kKMngTfJ9kQ";
+      for (int i = 0; i < pendingMintList.Count; i++)
+      {
+        string clientPubKey = pendingMintList[i][0];
+        string contractPubKey = pendingMintList[i][1];
+        PendingObject pending = PendingStorage.Get(clientPubKey, contractPubKey);
+        InfusionMint(clientPubKey, contractPubKey, Runtime.ExecutingScriptHash, pending.payTokenHash, pending.payTokenAmount, base58Properties);
+      }
+      HardenedState firstMinted = GetState("hello");
+      HardenedState secondMinted = GetState("hello#1");
+      Runtime.Notify("NFT States", new object[] { firstMinted, secondMinted });
     }
     private static void Assert_DefaultFeeStructure()
     {

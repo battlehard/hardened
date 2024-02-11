@@ -14,6 +14,7 @@ namespace Hardened
     private static readonly byte[] Prefix_Admin_Hashes = new byte[] { 0x01, 0x01 };
     private static readonly byte[] Prefix_Pending = new byte[] { 0x01, 0x02 };
     private static readonly byte[] Prefix_Wallet_Filter = new byte[] { 0x01, 0x03 };
+    private static readonly byte[] Prefix_Unique_Height = new byte[] { 0x01, 0x04 };
     private static readonly byte[] Prefix_Fee_Structure = new byte[] { 0x02, 0x00 };
     private static readonly byte[] Prefix_Blueprint_Image_Url = new byte[] { 0x02, 0x01 };
 
@@ -173,6 +174,21 @@ namespace Hardened
       private static byte[] ShortenUserWalletHash(UInt160 userWalletHash)
       {
         return ((byte[])userWalletHash).Range(0, 10);
+      }
+    }
+
+    public static class UniqueHeightStorage
+    {
+      internal static BigInteger Next()
+      {
+        BigInteger nextHeight = Get() + 1;
+        Storage.Put(Storage.CurrentContext, Prefix_Unique_Height, nextHeight);
+        return nextHeight;
+      }
+
+      internal static BigInteger Get()
+      {
+        return (BigInteger)Storage.Get(Storage.CurrentContext, Prefix_Unique_Height);
       }
     }
   }
