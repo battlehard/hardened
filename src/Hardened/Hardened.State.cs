@@ -13,6 +13,7 @@ namespace Hardened
   {
     public string image;
     public string state;
+    public UInt160 project;
     public UInt160[] contract; // Contract origin
     public UInt160 slot1NftHash;
     public string slot1NftId;
@@ -28,8 +29,8 @@ namespace Hardened
 
   public class State
   {
-    public const string Ready = "Ready";
-    public const string Blueprint = "Blueprint";
+    public const string Ready = "READY";
+    public const string Blueprint = "BLUEPRINT";
   }
 
   public class FeeStructure

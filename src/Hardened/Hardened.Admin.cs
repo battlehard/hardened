@@ -72,6 +72,7 @@ namespace Hardened
     }
     public static void InfusionMint(string clientPubKey, string contractPubKey, UInt160 contractHash, UInt160 payTokenHash, BigInteger payTokenAmount, string base58Properties)
     {
+      CheckContractAuthorization();
       PendingObject pending = PendingStorage.Get(clientPubKey, contractPubKey);
       // Pending object existing, check for matched pay token hash and amount
       Assert(pending.payTokenHash == payTokenHash && pending.payTokenAmount == payTokenAmount, E_06);
@@ -82,10 +83,8 @@ namespace Hardened
 
       string jsonString = StdLib.Base58Decode(base58Properties);
       Map<string, object> map = (Map<string, object>)StdLib.JsonDeserialize(jsonString);
-      string state = (string)map["state"];
-      Assert(state == State.Ready || state == State.Blueprint, E_07);
       List<UInt160> contractList = new List<UInt160>();
-      string[] contracts = (string[])map["contract"];
+      string[] contracts = (string[])map["Contract"];
       for (int i = 0; i < contracts.Length; i++)
       {
         contractList.Add(contracts[i].HexStringToUInt160());
@@ -93,9 +92,10 @@ namespace Hardened
       HardenedState mintingNft = new HardenedState()
       {
         Owner = pending.userWalletHash,
-        Name = (string)map["name"],
-        image = (string)map["image"],
-        state = state,
+        Name = (string)map["Name"],
+        image = (string)map["Image"],
+        state = State.Ready, // Minted state is always "Ready".
+        project = ((string)map["Project"]).HexStringToUInt160(),
         contract = contractList,
         slot1NftHash = pending.slot1NftHash,
         slot1NftId = pending.slot1NftId,
@@ -105,8 +105,8 @@ namespace Hardened
         slot3NftId = pending.slot3NftId,
         slot4NftHash = pending.slot4NftHash,
         slot4NftId = pending.slot4NftId,
-        meta = (Map<string, object>)map["meta"],
-        attributes = (Map<string, object>)map["attributes"]
+        meta = (Map<string, object>)map["Meta"],
+        attributes = (Map<string, object>)map["Attributes"]
       };
 
       // Checking unique tokenId
@@ -118,6 +118,39 @@ namespace Hardened
         mintingNft.Name = $"{mintingNft.Name}#{UniqueHeightStorage.Next()}";
       }
       Mint(mintingNft.Name, mintingNft);
+      PendingStorage.Delete(clientPubKey, contractPubKey);
+    }
+    public static void InfusionUpdate(string clientPubKey, string contractPubKey, UInt160 userWalletHash, UInt160 payTokenHash, BigInteger payTokenAmount, string base58Properties)
+    {
+      CheckContractAuthorization();
+      PendingObject pending = PendingStorage.Get(clientPubKey, contractPubKey);
+      // Pending object existing, check for matched user wallet hash
+      Assert(pending.userWalletHash == userWalletHash, E_07);
+
+      UInt160 walletPoolHash = FeeStructureStorage.Get().walletPoolHash!;
+      // Transfer pay token from BH contract to wallet pool
+      Safe17Transfer(pending.payTokenHash, Runtime.ExecutingScriptHash, walletPoolHash, pending.payTokenAmount);
+      // Transfer Gas from BH contract to wallet pool
+      Safe17Transfer(GAS.Hash, Runtime.ExecutingScriptHash, walletPoolHash, pending.gasAmount);
+
+      string jsonString = StdLib.Base58Decode(base58Properties);
+      Map<string, object> map = (Map<string, object>)StdLib.JsonDeserialize(jsonString);
+
+      HardenedState nftState = GetState(pending.bhNftId);
+      nftState.image = (string)map["Image"];
+      nftState.state = State.Ready; // Updated successfully turn state into "Ready"
+      nftState.slot1NftHash = pending.slot1NftHash;
+      nftState.slot1NftId = pending.slot1NftId;
+      nftState.slot2NftHash = pending.slot2NftHash;
+      nftState.slot2NftId = pending.slot2NftId;
+      nftState.slot3NftHash = pending.slot3NftHash;
+      nftState.slot3NftId = pending.slot3NftId;
+      nftState.slot4NftHash = pending.slot4NftHash;
+      nftState.slot4NftId = pending.slot4NftId;
+      nftState.meta = (Map<string, object>)map["Meta"];
+      nftState.attributes = (Map<string, object>)map["Attributes"];
+
+      UpdateState(nftState.Name, nftState); // NFT Name and ID are identical
       PendingStorage.Delete(clientPubKey, contractPubKey);
     }
   }

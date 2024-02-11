@@ -193,8 +193,8 @@ namespace Hardened
     }
     private static void Debug_InfusionMint(List<string[]> pendingMintList)
     {
-      // {"name":"hello","image":"url","state":"Ready","contract":["0xb3ccfca2bf5bab9cfae1c6c5b5df072579c4e138","0xb3ccfca2bf5bab9cfae1c6c5b5df072579c4e140"],"meta":{"seed":"s1","skill":[1,2,3],"sync":[7,8,9]},"attributes":{"primary":"main","skill":[1,2,3],"nature":["dragon","flying"],"stats":{"attack":1}}}
-      string base58Properties = "UyFyBjMcoxkd92LLGqjJm7rh3hgzvzoWbRCjuJm1DhapkZg5DT5Ruz8a4fmL44vSrUAJa5BYuZaquKoMq7n8qBHjponS9pU7XXCuH7Y9DpdkpNrjCTb4ufPCJh6NnnJcTwnZvkLEoPQfKK2eka48P2Gmi6qyL4cmdbg3GbZwDK1RCDSgpaEfnWFhwLaQAbdCBif9fRLGty1GYFzsk9RMDg16dYEieer1KYBUjF3T1LeUD6jNFL34oNtVoCEfB6cxwa36r11Wdb6MrEfKsbZgiWTqw3eGDq9ZMu42YEJXMeEqEUcPgurpyAdmNZdqzczxLRoWnqzSy7VaaaVkhc8F4TDuAXQuALuFVZEfozpAA7HFdGMoBKsCEzrpWZ8Q3GAvuqXswwmnFvGpcRr95kPoYaRGVdzyws8hzcXpakSQoPrTSy3gkjzPakxGJ66cj6sttUZ9znoo88qckkc8wQkqG3phtsmPvbRFetmGxT7i8EDYrHV8YyzhVep9whbHsvijJvhCawieiAUdoCUoyov5wqPtKcg5hvc78QEjLo9sDWNT1tA3BfdcWEsZoqKYCyDoNCQxyiNXcbGqonDpwp6EqhFLeZAUw3By7P5axdfGeSL68arRzabBb4RTUs4MRNhBwkrSrqEgPX3eK6GAjf41CvaR4kKMngTfJ9kQ";
+      // {"Name":"Flamefury","Image":"https://battle-hardened-cache.b-cdn.net/legends/Alchemist%20Reaver.png","State":"READY","Project":"0x0000000000000000000000000000000000000000","Contract":["0x5555555555555555555555555555555555555555","0x6666666666666666666666666666666666666666"],"Meta":{"Seed":"f83e1c3d-4465-4b29-a3bb-fa457e30d6c8","Skill":[[10,8],[6,12]],"Sync":[80,90,85,75],"Level":3,"Taste":"777","Rarity":"Legendary","Rank":5},"Attributes":{"Primary":"Fire","Secondary":"None","Aura":"Heat","Nature":["Dragon","Elemental"],"Stats":{"Attack":12,"Health":10,"Armor":8,"Speed":13,"Accuracy":11,"Luck":9}}}
+      string base58Properties = "GeV17U2Mre7DzzGVYjbdyGVJjbP8NYr69JhwQMQA2zbHpBE5RSWMH3mC7KfWPoQZB7k9i3eJVxsfLGXVjKNAsk3H4Wbyq3CzZA95XhJoUKJuZM6ZainnBtnmnknoS6VxMgHnofwan5pAcz9uQe3Lfpfqp6Uvbn6H6s3wSH3nhiCvYKpc7SjtvwmuerK1yH3DAMX2wqBHNSe63ssppXmBj13qRAEvz3abxx1tcKjVT8MVTktXVvaJKfWh15Q2mHUwnBx6v1yb3Ca8QbKxbgxA83d94PDBkP5NpbimJLAYJAHAiWdpYDWSQzaHViU71xv6iRsqN2JdTSQCrDX4sH7up3nRnCqfAna7wN7g4R1cG8zGSZ35hnYJzdMAqxeA4bV2ivkUepi3Rp9aGb4BALPbZ7Tq2TNJGhAtCrrc6gmGGubJjDL21ziYVbsS521vDHM79joZRx1AaBm5BCxZjAQ9qZoNcTwx7JGRhbdeArsgSrtXdDhvC9DACUdydK7719bkRxo4r4b5Bz5RA4RJnV2yJwVXPh8URf2Fu4WnYqnqaabW1BcLmWTzj4H4zzXVpiQRpUHJ7hXpQVdHvk7DuFvWGKUcBekiWTDBZdok3G8utv39FZvuxF3c1Gbu3A7mQKRnKRxWn73GKP2PXwEZFFtb7f7kFSDmkGdPfgznYHef2YpmuzjHERSmuCMhC1EdyKYdQ3JUMkva4WEBqttCeMUUbYUHho9aEZxjDed9cMPBX27STLvsPjKnEjtuMcLEjHxuDgcQEYf4pej8UMReMJa4HdmwYUvw7aNrMv9qukMwLXw4LJZZEqHFECr2Q";
       for (int i = 0; i < pendingMintList.Count; i++)
       {
         string clientPubKey = pendingMintList[i][0];
@@ -202,9 +202,10 @@ namespace Hardened
         PendingObject pending = PendingStorage.Get(clientPubKey, contractPubKey);
         InfusionMint(clientPubKey, contractPubKey, Runtime.ExecutingScriptHash, pending.payTokenHash, pending.payTokenAmount, base58Properties);
       }
-      HardenedState firstMinted = GetState("hello");
-      HardenedState secondMinted = GetState("hello#1");
-      Runtime.Notify("NFT States", new object[] { firstMinted, secondMinted });
+      HardenedState firstMinted = GetState("Flamefury");
+      HardenedState secondMinted = GetState("Flamefury#1");
+      Runtime.Notify("firstMinted State", new object[] { firstMinted });
+      Runtime.Notify("secondMinted State", new object[] { secondMinted });
     }
     private static void Assert_DefaultFeeStructure()
     {
