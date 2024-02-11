@@ -84,6 +84,25 @@
         }
       ],
       "checkpoint": "${workspaceFolder}/checkpoints/hardened-deployed.neoxp-checkpoint"
+    },
+    {
+      "name": "TestPendingInfusion",
+      "type": "neo-contract",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/Hardened/bin/sc/Hardened.nef",
+      "neo-express": "${workspaceFolder}/default.neo-express",
+      "invocation": {
+        "operation": "pendingInfusion",
+        "args": [0, 5, null]
+      },
+      "storage": [],
+      "signers": [
+        {
+          "account": "@admin",
+          "scopes": "Global"
+        }
+      ],
+      "checkpoint": "${workspaceFolder}/checkpoints/hardened-deployed.neoxp-checkpoint"
     }
   ]
 }

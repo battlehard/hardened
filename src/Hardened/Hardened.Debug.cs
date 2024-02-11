@@ -24,6 +24,7 @@ namespace Hardened
       Debug_ManageAdmin();
       Debug_FeeUpdate();
       Debug_PreInfusion_Mint();
+      Debug_PendingInfusion();
       // TODO: Debug Unfuse and BurnInfusion
     }
     private static void Debug_Helpers()
@@ -166,13 +167,24 @@ namespace Hardened
       Runtime.Notify("pendingListByAdmin1Wallet", new object[] { pendingListByAdmin1Wallet });
       Assert(pendingListByAdmin1Wallet.Count == 0, $"ERROR: Expected 0 admin pending but got {pendingListByAdmin1Wallet.Count}");
 
-      // Case 6: Delete one pending
+      // Case 6: Get pending list with filtered wallet
+      List<Map<string, object>> pendingListByFilteredWallet = PendingStorage.ListByWallets(new UInt160[] { admin1, owner }, 0, 5);
+      Runtime.Notify("pendingListByFilteredWallet", new object[] { pendingListByFilteredWallet });
+      Assert(pendingListByFilteredWallet.Count == 2, $"ERROR: Expected 2 filtered pending but got {pendingListByFilteredWallet.Count}");
+
+      // Case 7: Delete one pending
       CancelInfusion(clientAndContractPubKey[0], clientAndContractPubKey[1]); // Cancel oneNftObject infusion
       pendingListAll = PendingStorage.ListAll(0, 5);
       Runtime.Notify("pendingListAll", new object[] { pendingListAll });
       Assert(pendingListAll.Count == 1, $"ERROR: Expected 1 all pending but got {pendingListAll.Count}");
 
       return pendingMintList;
+    }
+    private static void Debug_PendingInfusion()
+    {
+      PendingInfusion(0, 10, null);
+      PendingInfusion(0, 10, new UInt160[] { owner });
+      PendingInfusion(0, 10, new UInt160[] { admin1, admin2, owner });
     }
     private static void Assert_DefaultFeeStructure()
     {

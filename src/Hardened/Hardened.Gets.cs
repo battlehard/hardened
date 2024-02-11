@@ -4,6 +4,7 @@ using Neo.SmartContract.Framework.Attributes;
 using Neo.SmartContract.Framework.Native;
 using Neo.SmartContract.Framework.Services;
 using static Hardened.Helpers;
+using System.Numerics;
 
 namespace Hardened
 {
@@ -18,25 +19,26 @@ namespace Hardened
       return (UInt160)Storage.Get(Storage.CurrentContext, Prefix_Owner);
     }
 
-    // [Safe]
-    // public static List<object> PendingInfusion(UInt160[] walletHashesList)
-    // {
-    //   if (IsAdmin())
-    //   {
-    //     if (walletHashesList == null || walletHashesList.Length == 0)
-    //     {
-    //       // return all
-    //     }
-    //     else
-    //     {
-    //       // return filtered
-    //     }
-    //   }
-    //   else
-    //   {
-    //     // return only user wallet data
-    //   }
-    // }
+    [Safe]
+    public static List<Map<string, object>> PendingInfusion(BigInteger skipCount, BigInteger pageSize, UInt160[] walletHashesList)
+    {
+      if (IsAdmin())
+      {
+        if (walletHashesList == null || walletHashesList.Length == 0)
+        {
+          return PendingStorage.ListAll(skipCount, pageSize);
+        }
+        else
+        {
+          return PendingStorage.ListByWallets(walletHashesList, skipCount, pageSize);
+        }
+      }
+      else
+      {
+        UInt160 userWallet = ((Transaction)Runtime.ScriptContainer).Sender;
+        return PendingStorage.ListByWallet(userWallet, skipCount, pageSize);
+      }
+    }
 
     private static HardenedState GetState(string tokenId)
     {

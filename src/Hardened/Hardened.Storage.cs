@@ -119,41 +119,54 @@ namespace Hardened
       internal static List<Map<string, object>> ListAll(BigInteger skipCount, BigInteger pageSize)
       {
         Iterator keys = pendingMap.Find(FindOptions.KeysOnly | FindOptions.RemovePrefix);
-        return GetListByKeysIterator(skipCount, pageSize, keys);
+        List<Iterator> keysList = new List<Iterator>();
+        keysList.Add(keys);
+        return GetListByKeysIteratorList(skipCount, pageSize, keysList);
+      }
+      internal static List<Map<string, object>> ListByWallets(UInt160[] userWalletHashes, BigInteger skipCount, BigInteger pageSize)
+      {
+        List<Iterator> keysList = new List<Iterator>();
+        for (int i = 0; i < userWalletHashes.Length; i++)
+        {
+          keysList.Add(walletFilterMap.Find(ShortenUserWalletHash(userWalletHashes[i]), FindOptions.KeysOnly | FindOptions.RemovePrefix));
+        }
+        return GetListByKeysIteratorList(skipCount, pageSize, keysList);
       }
       internal static List<Map<string, object>> ListByWallet(UInt160 userWalletHash, BigInteger skipCount, BigInteger pageSize)
       {
-        Iterator keys = walletFilterMap.Find(ShortenUserWalletHash(userWalletHash), FindOptions.KeysOnly | FindOptions.RemovePrefix);
-        return GetListByKeysIterator(skipCount, pageSize, keys);
+        return ListByWallets(new UInt160[] { userWalletHash }, skipCount, pageSize);
       }
-      private static List<Map<string, object>> GetListByKeysIterator(BigInteger skipCount, BigInteger pageSize, Iterator keys)
+      private static List<Map<string, object>> GetListByKeysIteratorList(BigInteger skipCount, BigInteger pageSize, List<Iterator> keysList)
       {
         List<Map<string, object>> returnListData = new();
         BigInteger foundKeySeq = 0;
-        while (keys.Next())
+        for (int i = 0; i < keysList.Count; i++)
         {
-          if (foundKeySeq >= skipCount && foundKeySeq < (skipCount + pageSize))
+          while (keysList[i].Next())
           {
-            byte[] key = (byte[])keys.Value;
-            PendingObject pendingObject = Get(key);
-            Map<string, object> pendingMapData = new();
-            pendingMapData["clientPubKey"] = pendingObject.clientPubKey;
-            pendingMapData["contractPubKey"] = pendingObject.contractPubKey;
-            pendingMapData["userWalletAddress"] = pendingObject.userWalletHash.ToAddress();
-            pendingMapData["bhNftId"] = pendingObject.bhNftId;
-            pendingMapData["slot1NftHash"] = pendingObject.slot1NftHash;
-            pendingMapData["slot1NftId"] = pendingObject.slot1NftId;
-            pendingMapData["slot2NftHash"] = pendingObject.slot2NftHash;
-            pendingMapData["slot2NftId"] = pendingObject.slot2NftId;
-            pendingMapData["slot3NftHash"] = pendingObject.slot3NftHash;
-            pendingMapData["slot3NftId"] = pendingObject.slot3NftId;
-            pendingMapData["slot4NftHash"] = pendingObject.slot4NftHash;
-            pendingMapData["slot4NftId"] = pendingObject.slot4NftId;
-            returnListData.Add(pendingMapData);
+            if (foundKeySeq >= skipCount && foundKeySeq < (skipCount + pageSize))
+            {
+              byte[] key = (byte[])keysList[i].Value;
+              PendingObject pendingObject = Get(key);
+              Map<string, object> pendingMapData = new();
+              pendingMapData["clientPubKey"] = pendingObject.clientPubKey;
+              pendingMapData["contractPubKey"] = pendingObject.contractPubKey;
+              pendingMapData["userWalletAddress"] = pendingObject.userWalletHash.ToAddress();
+              pendingMapData["bhNftId"] = pendingObject.bhNftId;
+              pendingMapData["slot1NftHash"] = pendingObject.slot1NftHash;
+              pendingMapData["slot1NftId"] = pendingObject.slot1NftId;
+              pendingMapData["slot2NftHash"] = pendingObject.slot2NftHash;
+              pendingMapData["slot2NftId"] = pendingObject.slot2NftId;
+              pendingMapData["slot3NftHash"] = pendingObject.slot3NftHash;
+              pendingMapData["slot3NftId"] = pendingObject.slot3NftId;
+              pendingMapData["slot4NftHash"] = pendingObject.slot4NftHash;
+              pendingMapData["slot4NftId"] = pendingObject.slot4NftId;
+              returnListData.Add(pendingMapData);
+            }
+            if (returnListData.Count >= pageSize)
+              break;
+            foundKeySeq++;
           }
-          if (returnListData.Count >= pageSize)
-            break;
-          foundKeySeq++;
         }
         return returnListData;
       }
