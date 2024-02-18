@@ -68,42 +68,27 @@ namespace Hardened
       // Validate provided NFT only for Update case
       if (!isMintRequest)
       {
-        // TODO: Update infusion logic need to be revised.
-        // HardenedState nft = GetState(bhNftId);
-        // Assert(nft.state == State.Ready || nft.state == State.Blueprint, E_08);
-        // if (nft.state == State.Ready)
-        // {
-        //   // If BH NFT is READY, transfer only new NFT.
-        //   for (int i = 0; i < nft.slotNftIds.Length; i++)
-        //   {
-        //     // TODO: Check validity and transfer NFT for lock if any.
-        //   }
-        //   if (IsEmpty(nft.slot1NftId) && !IsEmpty(slot1NftId)) Safe11Transfer(slot1NftHash, bhContractHash, slot1NftId);
-        //   if (IsEmpty(nft.slot2NftId) && !IsEmpty(slot2NftId)) Safe11Transfer(slot2NftHash, bhContractHash, slot2NftId);
-        //   if (IsEmpty(nft.slot3NftId) && !IsEmpty(slot3NftId)) Safe11Transfer(slot3NftHash, bhContractHash, slot3NftId);
-        //   if (IsEmpty(nft.slot4NftId) && !IsEmpty(slot4NftId)) Safe11Transfer(slot4NftHash, bhContractHash, slot4NftId);
-        // }
-        // else
-        // {
-        //   // If BH NFT is BLUEPRINT, allow transfer NFT pieces up to level.
-        //   int transferredPieces = 0;
-        //   if (!IsEmpty(slot1NftId) && transferredPieces < nft.level)
-        //   {
-        //     Safe11Transfer(slot1NftHash, bhContractHash, slot1NftId); transferredPieces++;
-        //   }
-        //   if (!IsEmpty(slot2NftId) && transferredPieces < nft.level)
-        //   {
-        //     Safe11Transfer(slot2NftHash, bhContractHash, slot2NftId); transferredPieces++;
-        //   }
-        //   if (!IsEmpty(slot3NftId) && transferredPieces < nft.level)
-        //   {
-        //     Safe11Transfer(slot3NftHash, bhContractHash, slot3NftId); transferredPieces++;
-        //   }
-        //   if (!IsEmpty(slot4NftId) && transferredPieces < nft.level)
-        //   {
-        //     Safe11Transfer(slot4NftHash, bhContractHash, slot4NftId); transferredPieces++;
-        //   }
-        // }
+        HardenedState nft = GetState(bhNftId);
+        Assert(nft.state == State.Ready || nft.state == State.Blueprint, E_08);
+
+        int[] updatingIndices = GetUpdateValuesIndex(nft.slotNftIds, slotNftIds);
+        if (nft.state == State.Ready)
+        {
+          // If BH NFT is READY, transfer only new NFT.
+          for (int i = 0; i < updatingIndices.Length; i++)
+          {
+            Safe11Transfer(slotNftHashes[updatingIndices[i]], bhContractHash, slotNftIds[updatingIndices[i]]);
+          }
+        }
+        else
+        {
+          // If BH NFT is BLUEPRINT, allow transfer NFT pieces up to level.
+          Assert(updatingIndices.Length <= nft.level, E_13);
+          for (int i = 0; i < updatingIndices.Length; i++)
+          {
+            Safe11Transfer(slotNftHashes[updatingIndices[i]], bhContractHash, slotNftIds[updatingIndices[i]]);
+          }
+        }
       }
       else
       {

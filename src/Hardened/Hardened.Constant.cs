@@ -20,5 +20,10 @@ namespace Hardened
     private const string E_06 = "ERROR: Provided pay token hash and amount must match data in the pending storage";
     private const string E_07 = "ERROR: Provided user wallet hash must match data in the pending storage";
     private const string E_08 = "ERROR: Invalid NFT state";
+    private const string E_09 = "ERROR: Array length is not the same";
+    private const string E_10 = "ERROR: Existing NFTs must be the subset of Update NFTs array";
+    private const string E_11 = "ERROR: Duplicate values found in the updating array";
+    private const string E_12 = "ERROR: No update NFT provide";
+    private const string E_13 = "ERROR: Quatity of update NFT for blueprint state cannot exceed the blueprint level";
   }
 }

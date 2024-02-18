@@ -48,7 +48,62 @@ namespace Hardened
         string uuid = GenerateUuidV4();
         ValidateUuid(uuid);
       }
+
+      string[] existing = new string[] { "a", "b", null, null };
+      string[] updating = new string[] { "a", "b", "c", null };
+      int[] indices = GetUpdateValuesIndex(existing, updating);
+      Assert(indices.Length == 1 && indices[0] == 2, "ERROR");
+
+      existing = new string[] { "a", "b", null, null };
+      updating = new string[] { "a", "d", "c", "b" };
+      indices = GetUpdateValuesIndex(existing, updating);
+      Assert(indices.Length == 2 && indices[0] == 1 && indices[1] == 2, "ERROR");
+
+      existing = new string[] { "a", "b", "c", "d" };
+      updating = new string[] { "a", "d", "c" };
+      try
+      {
+        GetUpdateValuesIndex(existing, updating);
+      }
+      catch (Exception e)
+      {
+        Assert(GetExceptionMessage(e) == E_09, "Expected: " + E_09);
+      }
+
+      existing = new string[] { "a", "b", "c", "d" };
+      updating = new string[] { "a", "d", "c", null };
+      try
+      {
+        GetUpdateValuesIndex(existing, updating);
+      }
+      catch (Exception e)
+      {
+        Assert(GetExceptionMessage(e) == E_10, "Expected: " + E_10);
+      }
+
+      existing = new string[] { "a", "b", null, null };
+      updating = new string[] { "a", "b", "c", "c" };
+      try
+      {
+        GetUpdateValuesIndex(existing, updating);
+      }
+      catch (Exception e)
+      {
+        Assert(GetExceptionMessage(e) == E_11, "Expected: " + E_11);
+      }
+
+      existing = new string[] { "a", "b", null, null };
+      updating = new string[] { "a", "b", null, null };
+      try
+      {
+        GetUpdateValuesIndex(existing, updating);
+      }
+      catch (Exception e)
+      {
+        Assert(GetExceptionMessage(e) == E_12, "Expected: " + E_12);
+      }
     }
+
     private static void Debug_Transfer()
     {
       Safe17Transfer(GAS.Hash, owner, admin1, 1_00000000);
@@ -277,7 +332,8 @@ namespace Hardened
     }
     private static string GetExceptionMessage(Exception e)
     {
-      return (string)StdLib.Deserialize(StdLib.Serialize(e));
+      string msg = (string)StdLib.Deserialize(StdLib.Serialize(e));
+      return msg;
     }
   }
 }
