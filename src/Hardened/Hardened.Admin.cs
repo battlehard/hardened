@@ -99,14 +99,8 @@ namespace Hardened
         level = level,
         project = ((string)map["Project"]).HexStringToUInt160(),
         contract = contractList,
-        slot1NftHash = pending.slot1NftHash,
-        slot1NftId = pending.slot1NftId!,
-        slot2NftHash = pending.slot2NftHash,
-        slot2NftId = pending.slot2NftId!,
-        slot3NftHash = pending.slot3NftHash,
-        slot3NftId = pending.slot3NftId!,
-        slot4NftHash = pending.slot4NftHash,
-        slot4NftId = pending.slot4NftId!,
+        slotNftHashes = pending.slotNftHashes,
+        slotNftIds = pending.slotNftIds,
         meta = (Map<string, object>)map["Meta"],
         attributes = (Map<string, object>)map["Attributes"]
       };
@@ -142,14 +136,8 @@ namespace Hardened
       HardenedState nftState = GetState(bhNftId);
       nftState.image = (string)map["Image"];
       nftState.state = State.Ready; // Updated successfully turn state into "Ready"
-      nftState.slot1NftHash = pending.slot1NftHash;
-      nftState.slot1NftId = pending.slot1NftId;
-      nftState.slot2NftHash = pending.slot2NftHash;
-      nftState.slot2NftId = pending.slot2NftId;
-      nftState.slot3NftHash = pending.slot3NftHash;
-      nftState.slot3NftId = pending.slot3NftId;
-      nftState.slot4NftHash = pending.slot4NftHash;
-      nftState.slot4NftId = pending.slot4NftId;
+      nftState.slotNftHashes = pending.slotNftHashes;
+      nftState.slotNftIds = pending.slotNftIds;
       nftState.meta = (Map<string, object>)map["Meta"];
       nftState.attributes = (Map<string, object>)map["Attributes"];
 
@@ -162,10 +150,10 @@ namespace Hardened
     private static int GetLevel(PendingObject pending)
     {
       int level = 0;
-      if (pending.slot1NftId != null) level += 1;
-      if (pending.slot2NftId != null) level += 1;
-      if (pending.slot3NftId != null) level += 1;
-      if (pending.slot4NftId != null) level += 1;
+      for (int i = 0; i < pending.slotNftIds.Length; i++)
+      {
+        if (pending.slotNftIds[i] != null) level += 1;
+      }
       return level;
     }
   }

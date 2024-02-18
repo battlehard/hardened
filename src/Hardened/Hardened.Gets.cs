@@ -56,14 +56,8 @@ namespace Hardened
       map["ownerAddress"] = token.Owner.ToAddress();
       map["name"] = tokenId;
       map["state"] = token.state;
-      map["slot1NftHash"] = token.slot1NftHash;
-      map["slot1NftId"] = token.slot1NftId;
-      map["slot2NftHash"] = token.slot2NftHash;
-      map["slot2NftId"] = token.slot2NftId;
-      map["slot3NftHash"] = token.slot3NftHash;
-      map["slot3NftId"] = token.slot3NftId;
-      map["slot4NftHash"] = token.slot4NftHash;
-      map["slot4NftId"] = token.slot4NftId;
+      map["slotNftHashes"] = token.slotNftHashes;
+      map["slotNftIds"] = token.slotNftIds;
       map["meta"] = token.meta;
       map["attributes"] = token.attributes;
       return map;

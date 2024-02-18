@@ -154,14 +154,8 @@ namespace Hardened
               pendingMapData["contractPubKey"] = pendingObject.contractPubKey;
               pendingMapData["userWalletAddress"] = pendingObject.userWalletHash.ToAddress();
               pendingMapData["bhNftId"] = pendingObject.bhNftId;
-              pendingMapData["slot1NftHash"] = pendingObject.slot1NftHash;
-              pendingMapData["slot1NftId"] = pendingObject.slot1NftId;
-              pendingMapData["slot2NftHash"] = pendingObject.slot2NftHash;
-              pendingMapData["slot2NftId"] = pendingObject.slot2NftId;
-              pendingMapData["slot3NftHash"] = pendingObject.slot3NftHash;
-              pendingMapData["slot3NftId"] = pendingObject.slot3NftId;
-              pendingMapData["slot4NftHash"] = pendingObject.slot4NftHash;
-              pendingMapData["slot4NftId"] = pendingObject.slot4NftId;
+              pendingMapData["slotNftHashes"] = pendingObject.slotNftHashes;
+              pendingMapData["slotNftIds"] = pendingObject.slotNftIds;
               returnListData.Add(pendingMapData);
             }
             if (returnListData.Count >= pageSize)

@@ -21,10 +21,10 @@ namespace Hardened
 
     private static void ReturnLockNFTs(HardenedState nftState)
     {
-      if (!IsEmpty(nftState.slot1NftId)) Safe11Transfer(nftState.slot1NftHash, nftState.Owner, nftState.slot1NftId); // Slot 1 NFT
-      if (!IsEmpty(nftState.slot2NftId)) Safe11Transfer(nftState.slot2NftHash, nftState.Owner, nftState.slot2NftId); // Slot 2 NFT
-      if (!IsEmpty(nftState.slot3NftId)) Safe11Transfer(nftState.slot3NftHash, nftState.Owner, nftState.slot3NftId); // Slot 3 NFT
-      if (!IsEmpty(nftState.slot4NftId)) Safe11Transfer(nftState.slot4NftHash, nftState.Owner, nftState.slot4NftId); // Slot 4 NFT
+      for (int i = 0; i < nftState.slotNftIds.Length; i++)
+      {
+        if (!IsEmpty(nftState.slotNftIds[i])) Safe11Transfer(nftState.slotNftHashes[i], nftState.Owner, nftState.slotNftIds[i]);
+      }
     }
   }
 }

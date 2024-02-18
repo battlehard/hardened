@@ -108,21 +108,18 @@ namespace Hardened
       // Case 1: PreInfusion with unmatched last 4 digit of clientPubKey and wallet address
       try
       {
-        PreInfusion(GenerateIdBase64(16), NEO.Hash, 10, null, null, null, null, null, null, null, null, null);
+        PreInfusion(GenerateIdBase64(16), NEO.Hash, 10, null, null, null);
       }
       catch (Exception e)
       {
         Assert(GetExceptionMessage(e) == E_01, "Expected: " + E_01);
       }
 
-      // Prepare PreInfusion clientPubKey to be matched with wallet address
-      string clientPubKey = GenerateIdBase64(16);
-      clientPubKey = clientPubKey.Substring(0, clientPubKey.Length - 4);
-      string userWalletAddress = owner.ToAddress();
-      clientPubKey += userWalletAddress.Substring(userWalletAddress.Length - 4);
+      string clientPubKey = GetClientPubKey(owner.ToAddress());
 
-      // Mint 5 NFTs for use in the mint scenarios
-      for (int i = 1; i <= 5; i++)
+      // Mint 6 NFTs for use in the mint and update scenarios
+      int quantity = 6;
+      for (int i = 1; i <= quantity; i++)
         Mint($"testNft_{i}", new HardenedState()
         {
           Owner = owner,
@@ -141,7 +138,7 @@ namespace Hardened
       string[] clientAndContractPubKey;
       try
       {
-        clientAndContractPubKey = PreInfusion(clientPubKey, NEO.Hash, 10, null, null, null, null, null, null, null, null, null);
+        clientAndContractPubKey = PreInfusion(clientPubKey, NEO.Hash, 10, null, null, null);
       }
       catch (Exception e)
       {
@@ -149,12 +146,19 @@ namespace Hardened
       }
 
       // Case 3: Mint with full NFT slots and one slot
-      clientAndContractPubKey = PreInfusion(clientPubKey, NEO.Hash, 20, null, Runtime.ExecutingScriptHash, "testNft_1", Runtime.ExecutingScriptHash, "testNft_2", Runtime.ExecutingScriptHash, "testNft_3", Runtime.ExecutingScriptHash, "testNft_4");
+      UInt160[] providingNftHashes = new UInt160[4];
+      string[] providingNftIds = new string[4];
+      for (int i = 0; i < 4; i++)
+      {
+        providingNftHashes[i] = Runtime.ExecutingScriptHash;
+        providingNftIds[i] = $"testNft_{i + 1}";
+      }
+      clientAndContractPubKey = PreInfusion(clientPubKey, NEO.Hash, 20, null, providingNftHashes, providingNftIds);
       pendingMintList.Add(clientAndContractPubKey);
       PendingObject fullNftObject = PendingStorage.Get(clientAndContractPubKey[0], clientAndContractPubKey[1]);
       Runtime.Notify("fullNftObject", new object[] { fullNftObject });
 
-      clientAndContractPubKey = PreInfusion(clientPubKey, NEO.Hash, 30, null, Runtime.ExecutingScriptHash, "testNft_5", null, null, null, null, null, null);
+      clientAndContractPubKey = PreInfusion(clientPubKey, NEO.Hash, 30, null, new UInt160[] { Runtime.ExecutingScriptHash }, new string[] { "testNft_5" });
       PendingObject oneNftObject = PendingStorage.Get(clientAndContractPubKey[0], clientAndContractPubKey[1]);
       Runtime.Notify("oneNftObject", new object[] { oneNftObject });
 
@@ -184,11 +188,21 @@ namespace Hardened
       Assert(pendingListAll.Count == 1, $"ERROR: Expected 1 all pending but got {pendingListAll.Count}");
 
       // Preparation for InfusionMint
-      clientAndContractPubKey = PreInfusion(clientPubKey, NEO.Hash, 30, null, Runtime.ExecutingScriptHash, "testNft_5", null, null, null, null, null, null);
+      clientAndContractPubKey = PreInfusion(clientPubKey, NEO.Hash, 30, null, new UInt160[] { Runtime.ExecutingScriptHash }, new string[] { "testNft_5" });
       pendingMintList.Add(clientAndContractPubKey);
 
       return pendingMintList;
     }
+
+    private static string GetClientPubKey(string userWalletAddress)
+    {
+      // Prepare PreInfusion clientPubKey to be matched with wallet address
+      string clientPubKey = GenerateIdBase64(16);
+      clientPubKey = clientPubKey.Substring(0, clientPubKey.Length - 4);
+      clientPubKey += userWalletAddress.Substring(userWalletAddress.Length - 4);
+      return clientPubKey;
+    }
+
     private static void Debug_PendingInfusion()
     {
       PendingInfusion(0, 10, null);
@@ -206,12 +220,19 @@ namespace Hardened
         PendingObject pending = PendingStorage.Get(clientPubKey, contractPubKey);
         InfusionMint(clientPubKey, contractPubKey, Runtime.ExecutingScriptHash, pending.payTokenHash, pending.payTokenAmount, base58Properties);
       }
-      HardenedState firstMinted = GetState("Flamefury");
-      HardenedState secondMinted = GetState("Flamefury#1");
+      string nftId = "Flamefury";
+      HardenedState firstMinted = GetState(nftId);
+      HardenedState secondMinted = GetState($"{nftId}#1");
       Runtime.Notify("firstMinted State", new object[] { firstMinted });
       Runtime.Notify("secondMinted State", new object[] { secondMinted });
 
       // TODO: Test InfusionUpdate
+      // string updClientPubKey = GetClientPubKey(owner.ToAddress());
+      // string[] clientAndContractPubKey = PreInfusion(updClientPubKey, NEO.Hash, 1, nftId, new UInt160[] { Runtime.ExecutingScriptHash }, new string[] { "testNft_6" });
+      // string base58UpdProperties = "6FpByEy3dEgXhqrit7JittgsQZbuj6KyBpTPN6CpjRCu6Cxy4ErF42FhnPQBw1BYiDshDg5fZN5aAKkA4dTtBvv2PkHWTkzgVVYqkgiB39ypbjaHyPir2E7FCTLzJUiQjW33QF8TjK1fbBS2XRw22414TKAYfLs6iL7ioMhvDCzzTHbXBn82wnQS9io6cfMawnQ6iq7r1Dd3npi1h9j3itZ4E6MMmnfKVtczYRdXYN4Ti6LDqeQn4BS2nHifPmf4JKdDnRWMQFWHd289ztzxrudcuWMUsZS6jprAHBbBY5AbMB5WJdtXg6h3W5JvCMNKefkofjExN3a3LF3VvGHaXRyyrdzYBH2B7sgdZWpZBwVa9smPLVHRsQVBTQBf4zQaidjJLjysKUFrnaPQWkA7teEhEp2c81YYmvXW1PMJdXrXk2CGfWKQPi4P9wYWoecdbSpK9cptRUtLuKZGinBDRaagCrTZistxMAEvUeXzx27BU6Y3JWQBKMxfVgZEfXUXQkLJekbWaGiF7KpzKov3TvdQy91FpoU4sAFs4NDNgHsCqgZgogmzunPwqpZmCScNav9EbLLCcTT66Gu9FvE8PTRuaa5p6fwcXx5q8J5k6znj5cFZ6wcpkopwpRSUBcEQYCwxqKhYhG2pXv9VNJY746M9o9FN5tvUv7Da4FRDVGYuakQ4kKNKTzpfNacpgMiRuwNFEoXKfQzBuLrSxKwJtk5kUYfGqu4ETgX8gF9vzBaRPTuDagrSA2TGgEimrKY8tqFWjnU67r2M9LhJ3eKRhbP2DamfwMyP7b7c4msEbQybzGdsLNL53ia82Bac";
+      // InfusionUpdate(clientAndContractPubKey[0], clientAndContractPubKey[1], owner, NEO.Hash, 1, base58UpdProperties);
+      // HardenedState updatedNft = GetState(nftId);
+      // Runtime.Notify("Updated NFT State", new object[] { updatedNft });
     }
     private static void Debug_UnfuseAndBurnInfusion()
     {

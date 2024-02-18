@@ -17,8 +17,7 @@ namespace Hardened
   public partial class Hardened : Nep11Token<HardenedState>
   {
     public static string[] PreInfusion(string clientPubKey, UInt160 payTokenHash, BigInteger payTokenAmount, string bhNftId,
-                                  UInt160 slot1NftHash, string slot1NftId, UInt160 slot2NftHash, string slot2NftId,
-                                  UInt160 slot3NftHash, string slot3NftId, UInt160 slot4NftHash, string slot4NftId)
+                                  UInt160[] slotNftHashes, string[] slotNftIds)
     {
       // Get user wallet information
       UInt160 userWalletHash = ((Transaction)Runtime.ScriptContainer).Sender;
@@ -53,50 +52,65 @@ namespace Hardened
       if (!isMintRequest)
         gasAmount = feeStructure.gasUpdateCost;
       Safe17Transfer(GAS.Hash, userWalletHash, bhContractHash, gasAmount);
-      // Transfer NFTs to lock
-      Assert(!IsEmpty(slot1NftId) || !IsEmpty(slot2NftId) || !IsEmpty(slot3NftId) || !IsEmpty(slot4NftId), E_02);
+      // Validate NFT slots
+      Assert(slotNftIds != null && slotNftIds.Length > 0 && slotNftIds.Length <= MAX_SLOTS, E_02);
+      bool isNftProvided = false;
+      for (int i = 0; i < slotNftIds!.Length; i++)
+      {
+        if (!IsEmpty(slotNftIds[i]))
+        {
+          isNftProvided = true;
+          break;
+        }
+      }
+      Assert(isNftProvided, E_02);
 
       // Validate provided NFT only for Update case
       if (!isMintRequest)
       {
-        HardenedState nft = GetState(bhNftId);
-        Assert(nft.state == State.Ready || nft.state == State.Blueprint, E_08);
-        if (nft.state == State.Ready)
-        {
-          // If BH NFT is READY, transfer only new NFT.
-          if (IsEmpty(nft.slot1NftId) && !IsEmpty(slot1NftId)) Safe11Transfer(slot1NftHash, bhContractHash, slot1NftId);
-          if (IsEmpty(nft.slot2NftId) && !IsEmpty(slot2NftId)) Safe11Transfer(slot2NftHash, bhContractHash, slot2NftId);
-          if (IsEmpty(nft.slot3NftId) && !IsEmpty(slot3NftId)) Safe11Transfer(slot3NftHash, bhContractHash, slot3NftId);
-          if (IsEmpty(nft.slot4NftId) && !IsEmpty(slot4NftId)) Safe11Transfer(slot4NftHash, bhContractHash, slot4NftId);
-        }
-        else
-        {
-          // If BH NFT is BLUEPRINT, allow transfer NFT pieces up to level.
-          int transferredPieces = 0;
-          if (!IsEmpty(slot1NftId) && transferredPieces < nft.level)
-          {
-            Safe11Transfer(slot1NftHash, bhContractHash, slot1NftId); transferredPieces++;
-          }
-          if (!IsEmpty(slot2NftId) && transferredPieces < nft.level)
-          {
-            Safe11Transfer(slot2NftHash, bhContractHash, slot2NftId); transferredPieces++;
-          }
-          if (!IsEmpty(slot3NftId) && transferredPieces < nft.level)
-          {
-            Safe11Transfer(slot3NftHash, bhContractHash, slot3NftId); transferredPieces++;
-          }
-          if (!IsEmpty(slot4NftId) && transferredPieces < nft.level)
-          {
-            Safe11Transfer(slot4NftHash, bhContractHash, slot4NftId); transferredPieces++;
-          }
-        }
+        // TODO: Update infusion logic need to be revised.
+        // HardenedState nft = GetState(bhNftId);
+        // Assert(nft.state == State.Ready || nft.state == State.Blueprint, E_08);
+        // if (nft.state == State.Ready)
+        // {
+        //   // If BH NFT is READY, transfer only new NFT.
+        //   for (int i = 0; i < nft.slotNftIds.Length; i++)
+        //   {
+        //     // TODO: Check validity and transfer NFT for lock if any.
+        //   }
+        //   if (IsEmpty(nft.slot1NftId) && !IsEmpty(slot1NftId)) Safe11Transfer(slot1NftHash, bhContractHash, slot1NftId);
+        //   if (IsEmpty(nft.slot2NftId) && !IsEmpty(slot2NftId)) Safe11Transfer(slot2NftHash, bhContractHash, slot2NftId);
+        //   if (IsEmpty(nft.slot3NftId) && !IsEmpty(slot3NftId)) Safe11Transfer(slot3NftHash, bhContractHash, slot3NftId);
+        //   if (IsEmpty(nft.slot4NftId) && !IsEmpty(slot4NftId)) Safe11Transfer(slot4NftHash, bhContractHash, slot4NftId);
+        // }
+        // else
+        // {
+        //   // If BH NFT is BLUEPRINT, allow transfer NFT pieces up to level.
+        //   int transferredPieces = 0;
+        //   if (!IsEmpty(slot1NftId) && transferredPieces < nft.level)
+        //   {
+        //     Safe11Transfer(slot1NftHash, bhContractHash, slot1NftId); transferredPieces++;
+        //   }
+        //   if (!IsEmpty(slot2NftId) && transferredPieces < nft.level)
+        //   {
+        //     Safe11Transfer(slot2NftHash, bhContractHash, slot2NftId); transferredPieces++;
+        //   }
+        //   if (!IsEmpty(slot3NftId) && transferredPieces < nft.level)
+        //   {
+        //     Safe11Transfer(slot3NftHash, bhContractHash, slot3NftId); transferredPieces++;
+        //   }
+        //   if (!IsEmpty(slot4NftId) && transferredPieces < nft.level)
+        //   {
+        //     Safe11Transfer(slot4NftHash, bhContractHash, slot4NftId); transferredPieces++;
+        //   }
+        // }
       }
       else
       {
-        if (!IsEmpty(slot1NftId)) Safe11Transfer(slot1NftHash, bhContractHash, slot1NftId);
-        if (!IsEmpty(slot2NftId)) Safe11Transfer(slot2NftHash, bhContractHash, slot2NftId);
-        if (!IsEmpty(slot3NftId)) Safe11Transfer(slot3NftHash, bhContractHash, slot3NftId);
-        if (!IsEmpty(slot4NftId)) Safe11Transfer(slot4NftHash, bhContractHash, slot4NftId);
+        for (int i = 0; i < slotNftIds.Length; i++)
+        {
+          if (!IsEmpty(slotNftIds[i])) Safe11Transfer(slotNftHashes[i], bhContractHash, slotNftIds[i]);
+        }
       }
 
       // Generate contractPubKey (PubKey2)
@@ -112,14 +126,8 @@ namespace Hardened
         payTokenAmount = payTokenAmount,
         gasAmount = gasAmount,
         bhNftId = bhNftId,
-        slot1NftHash = slot1NftHash,
-        slot1NftId = slot1NftId,
-        slot2NftHash = slot2NftHash,
-        slot2NftId = slot2NftId,
-        slot3NftHash = slot3NftHash,
-        slot3NftId = slot3NftId,
-        slot4NftHash = slot4NftHash,
-        slot4NftId = slot4NftId
+        slotNftHashes = slotNftHashes,
+        slotNftIds = slotNftIds
       };
       PendingStorage.Put(pending);
 
@@ -142,10 +150,10 @@ namespace Hardened
       UInt160 bhContrachHash = Runtime.ExecutingScriptHash; // This contract address
       // Returning of locked assets.
       if (!IsEmpty(pending.bhNftId)) Safe11Transfer(bhContrachHash, pending.userWalletHash, pending.bhNftId); // BH NFT
-      if (!IsEmpty(pending.slot1NftId)) Safe11Transfer(pending.slot1NftHash, pending.userWalletHash, pending.slot1NftId); // Slot 1 NFT
-      if (!IsEmpty(pending.slot2NftId)) Safe11Transfer(pending.slot2NftHash, pending.userWalletHash, pending.slot2NftId); // Slot 2 NFT
-      if (!IsEmpty(pending.slot3NftId)) Safe11Transfer(pending.slot3NftHash, pending.userWalletHash, pending.slot3NftId); // Slot 3 NFT
-      if (!IsEmpty(pending.slot4NftId)) Safe11Transfer(pending.slot4NftHash, pending.userWalletHash, pending.slot4NftId); // Slot 4 NFT
+      for (int i = 0; i < pending.slotNftIds.Length; i++)
+      {
+        if (!IsEmpty(pending.slotNftIds[i])) Safe11Transfer(pending.slotNftHashes[i], pending.userWalletHash, pending.slotNftIds[i]);
+      }
       Safe17Transfer(pending.payTokenHash, bhContrachHash, pending.userWalletHash, pending.payTokenAmount); // Pay Token
       BigInteger refundGas = pending.gasAmount; // Prepare full refund amount
 

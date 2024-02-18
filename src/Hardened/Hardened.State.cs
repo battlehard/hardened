@@ -16,14 +16,8 @@ namespace Hardened
     public int level;
     public UInt160 project;
     public UInt160[] contract; // Contract origin
-    public UInt160 slot1NftHash;
-    public string slot1NftId;
-    public UInt160 slot2NftHash;
-    public string slot2NftId;
-    public UInt160 slot3NftHash;
-    public string slot3NftId;
-    public UInt160 slot4NftHash;
-    public string slot4NftId;
+    public UInt160[] slotNftHashes;
+    public string[] slotNftIds;
     public Map<string, object> meta;
     public Map<string, object> attributes;
   }
@@ -52,13 +46,7 @@ namespace Hardened
     public BigInteger payTokenAmount;
     public BigInteger gasAmount;
     public string bhNftId;
-    public UInt160 slot1NftHash;
-    public string slot1NftId;
-    public UInt160 slot2NftHash;
-    public string slot2NftId;
-    public UInt160 slot3NftHash;
-    public string slot3NftId;
-    public UInt160 slot4NftHash;
-    public string slot4NftId;
+    public UInt160[] slotNftHashes;
+    public string[] slotNftIds;
   }
 }
