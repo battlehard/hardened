@@ -3,16 +3,12 @@
   "isRoot": true,
   "tools": {
     "neo.express": {
-      "version": "3.5.20",
-      "commands": [
-        "neoxp"
-      ]
+      "version": "3.6.17",
+      "commands": ["neoxp"]
     },
     "neo.compiler.csharp": {
-      "version": "3.5.0",
-      "commands": [
-        "nccs"
-      ]
+      "version": "3.6.2",
+      "commands": ["nccs"]
     }
   }
 }
