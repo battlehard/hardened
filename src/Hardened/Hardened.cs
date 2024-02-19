@@ -54,16 +54,17 @@ namespace Hardened
       Safe17Transfer(GAS.Hash, userWalletHash, bhContractHash, gasAmount);
       // Validate NFT slots
       Assert(slotNftIds != null && slotNftIds.Length > 0 && slotNftIds.Length <= MAX_SLOTS, E_02);
-      bool isNftProvided = false;
+
+      bool isNull = false;
       for (int i = 0; i < slotNftIds!.Length; i++)
       {
-        if (!IsEmpty(slotNftIds[i]))
+        if (IsEmpty(slotNftIds[i]))
         {
-          isNftProvided = true;
+          isNull = true;
           break;
         }
       }
-      Assert(isNftProvided, E_02);
+      Assert(!isNull, E_02);
 
       // Validate provided NFT only for Update case
       if (!isMintRequest)
@@ -71,22 +72,23 @@ namespace Hardened
         HardenedState nft = GetState(bhNftId);
         Assert(nft.state == State.Ready || nft.state == State.Blueprint, E_08);
 
-        int[] updatingIndices = GetUpdateValuesIndex(nft.slotNftIds, slotNftIds);
+        // Validate that provide update NFTs are no duplication and can fit available slots
+        CheckUpdateNft(nft.slotNftIds, slotNftIds);
         if (nft.state == State.Ready)
         {
           // If BH NFT is READY, transfer only new NFT.
-          for (int i = 0; i < updatingIndices.Length; i++)
+          for (int i = 0; i < slotNftIds.Length; i++)
           {
-            Safe11Transfer(slotNftHashes[updatingIndices[i]], bhContractHash, slotNftIds[updatingIndices[i]]);
+            Safe11Transfer(slotNftHashes[i], bhContractHash, slotNftIds[i]);
           }
         }
         else
         {
           // If BH NFT is BLUEPRINT, allow transfer NFT pieces up to level.
-          Assert(updatingIndices.Length <= nft.level, E_13);
-          for (int i = 0; i < updatingIndices.Length; i++)
+          Assert(slotNftIds.Length <= nft.level, E_11);
+          for (int i = 0; i < slotNftIds.Length; i++)
           {
-            Safe11Transfer(slotNftHashes[updatingIndices[i]], bhContractHash, slotNftIds[updatingIndices[i]]);
+            Safe11Transfer(slotNftHashes[i], bhContractHash, slotNftIds[i]);
           }
         }
       }
@@ -94,7 +96,7 @@ namespace Hardened
       {
         for (int i = 0; i < slotNftIds.Length; i++)
         {
-          if (!IsEmpty(slotNftIds[i])) Safe11Transfer(slotNftHashes[i], bhContractHash, slotNftIds[i]);
+          Safe11Transfer(slotNftHashes[i], bhContractHash, slotNftIds[i]);
         }
       }
 

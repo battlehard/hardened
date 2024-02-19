@@ -75,5 +75,18 @@ namespace Hardened
         throw new Exception("Invalid hexadecimal character.");
       }
     }
+    public static T[] Concat<T>(this T[] array, T[] concatArray)
+    {
+      List<T> concatList = new List<T>();
+      foreach (T e in array)
+      {
+        concatList.Add(e);
+      }
+      foreach (T e in concatArray)
+      {
+        concatList.Add(e);
+      }
+      return concatList;
+    }
   }
 }

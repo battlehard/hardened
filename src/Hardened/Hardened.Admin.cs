@@ -136,8 +136,8 @@ namespace Hardened
       HardenedState nftState = GetState(bhNftId);
       nftState.image = (string)map["Image"];
       nftState.state = State.Ready; // Updated successfully turn state into "Ready"
-      nftState.slotNftHashes = pending.slotNftHashes;
-      nftState.slotNftIds = pending.slotNftIds;
+      nftState.slotNftHashes = nftState.slotNftHashes.Concat(pending.slotNftHashes);
+      nftState.slotNftIds = nftState.slotNftIds.Concat(pending.slotNftIds);
       nftState.meta = (Map<string, object>)map["Meta"];
       nftState.attributes = (Map<string, object>)map["Attributes"];
 
@@ -154,6 +154,7 @@ namespace Hardened
       {
         if (pending.slotNftIds[i] != null) level += 1;
       }
+      Assert(level <= MAX_SLOTS, E_12);
       return level;
     }
   }

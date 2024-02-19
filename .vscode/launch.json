@@ -24,13 +24,13 @@
       "checkpoint": "${workspaceFolder}/checkpoints/hardened-deployed.neoxp-checkpoint"
     },
     {
-      "name": "TestCore",
+      "name": "TestUserOperation",
       "type": "neo-contract",
       "request": "launch",
       "program": "${workspaceFolder}/src/Hardened/bin/sc/Hardened.nef",
       "neo-express": "${workspaceFolder}/default.neo-express",
       "invocation": {
-        "operation": "testCore",
+        "operation": "testUserOperation",
         "args": []
       },
       "storage": [],
@@ -51,6 +51,25 @@
       //     ]
       //   }
       // ],
+      "checkpoint": "${workspaceFolder}/checkpoints/hardened-deployed.neoxp-checkpoint"
+    },
+    {
+      "name": "TestAdminOperation",
+      "type": "neo-contract",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/Hardened/bin/sc/Hardened.nef",
+      "neo-express": "${workspaceFolder}/default.neo-express",
+      "invocation": {
+        "operation": "testAdminOperation",
+        "args": []
+      },
+      "storage": [],
+      "signers": [
+        {
+          "account": "@owner",
+          "scopes": "Global"
+        }
+      ],
       "checkpoint": "${workspaceFolder}/checkpoints/hardened-deployed.neoxp-checkpoint"
     },
     {

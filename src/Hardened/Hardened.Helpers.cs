@@ -28,51 +28,25 @@ namespace Hardened
       }
     }
 
-    private static int[] GetUpdateValuesIndex(string[] existingValues, string[] updateValues)
+    private static void CheckUpdateNft(string[] existingValues, string[] updateValues)
     {
-      // Length check
-      Assert(existingValues.Length == updateValues.Length, E_09);
+      Assert(existingValues.Length + updateValues.Length <= MAX_SLOTS, E_09);
 
-      // Gather non empty values from existing.
-      List<string> nonEmptyExistingValuesSet = new List<string>();
-      for (int i = 0; i < existingValues.Length; i++)
-      {
-        if (!IsEmpty(existingValues[i]))
-          nonEmptyExistingValuesSet.Add(existingValues[i]);
-      }
-
-      // Subset check
+      // Duplication check
       foreach (string existingVal in existingValues)
       {
         if (IsEmpty(existingVal)) continue; // Skip empty slots
 
-        bool isSubset = false;
+        bool isDuplicate = false;
         foreach (string newValue in updateValues)
         {
           if (existingVal == newValue)
           {
-            isSubset = true;
+            isDuplicate = true;
           }
         }
-        Assert(isSubset, E_10);
+        Assert(!isDuplicate, E_10);
       }
-
-      // Find new values and their indices
-      List<int> newIndices = new List<int>();
-      List<string> seenValues = new List<string>();
-
-      for (int i = 0; i < updateValues.Length; i++)
-      {
-        string value = updateValues[i];
-        if (value != null && !ContainsValue(nonEmptyExistingValuesSet, value))
-        {
-          Assert(!ContainsValue(seenValues, value), E_11);
-          newIndices.Add(i);
-          seenValues.Add(value);
-        }
-      }
-      Assert(newIndices.Count > 0, E_12);
-      return newIndices;
     }
 
     private static bool ContainsValue(List<string> list, string value)
