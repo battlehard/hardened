@@ -32,6 +32,7 @@ namespace Hardened
     }
     public static void TestAdminOperation()
     {
+      CheckContractAuthorization();
       Debug_InfusionMintAndInfusionUpdate();
       Debug_UnfuseAndBurnInfusion();
     }
