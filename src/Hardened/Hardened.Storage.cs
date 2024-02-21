@@ -117,6 +117,42 @@ namespace Hardened
         byte[] walletFilterKey = Helper.Concat(ShortenUserWalletHash(pendingObject.userWalletHash), key);
         walletFilterMap.Delete(walletFilterKey);
       }
+      internal static BigInteger Count(UInt160[] userWalletHashes)
+      {
+        BigInteger count = 0;
+        if (userWalletHashes == null || userWalletHashes.Length == 0)
+        {
+          Iterator keys = pendingMap.Find(FindOptions.KeysOnly | FindOptions.RemovePrefix);
+          while (keys.Next())
+          {
+            count++;
+          }
+        }
+        else if (userWalletHashes.Length == 1)
+        {
+          Iterator keys = walletFilterMap.Find(ShortenUserWalletHash(userWalletHashes[0]), FindOptions.KeysOnly | FindOptions.RemovePrefix);
+          while (keys.Next())
+          {
+            count++;
+          }
+        }
+        else // userWalletHashes > 1
+        {
+          List<Iterator> keysList = new List<Iterator>();
+          for (int i = 0; i < userWalletHashes.Length; i++)
+          {
+            keysList.Add(walletFilterMap.Find(ShortenUserWalletHash(userWalletHashes[i]), FindOptions.KeysOnly | FindOptions.RemovePrefix));
+          }
+          for (int i = 0; i < keysList.Count; i++)
+          {
+            while (keysList[i].Next())
+            {
+              count++;
+            }
+          }
+        }
+        return count;
+      }
       internal static List<Map<string, object>> ListAll(BigInteger skipCount, BigInteger pageSize)
       {
         Iterator keys = pendingMap.Find(FindOptions.KeysOnly | FindOptions.RemovePrefix);

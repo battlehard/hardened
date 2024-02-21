@@ -11,6 +11,7 @@ namespace Hardened
     private static readonly BigInteger defaultGasMintCost = 1_00000000;
     private static readonly BigInteger defaultGasUpdateCost = 0_50000000;
     private static readonly int MAX_SLOTS = 4;
+    private static readonly int MAX_PAGE_LIMIT = 50;
     // ERROR MESSAGE
     private const string E_01 = "ERROR: The last 4 digits of wallet address and clientPubKey is not match";
     private const string E_02 = "ERROR: PreInfusion for Mint must have at least one NFT in any slots";
@@ -24,5 +25,8 @@ namespace Hardened
     private const string E_10 = "ERROR: New NFTs must not have any duplication with existing NFTs";
     private const string E_11 = "ERROR: Quantity of update NFT for blueprint state cannot exceed the blueprint level";
     private const string E_12 = "ERROR: Level cannot exceed max allowd NFT slots";
+    private const string E_13 = "Pagination data must be provided, pageNumber and pageSize must have at least 1";
+    private const string E_14 = "Input page size exceed the max limit of a single page";
+    private const string E_15 = "Input page number exceed the totalPages";
   }
 }

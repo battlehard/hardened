@@ -249,9 +249,36 @@ namespace Hardened
 
     private static void Debug_PendingInfusion()
     {
-      PendingInfusion(0, 10, null);
-      PendingInfusion(0, 10, new UInt160[] { owner });
-      PendingInfusion(0, 10, new UInt160[] { admin1, admin2, owner });
+      try
+      {
+        PendingInfusion(0, 0, null);
+      }
+      catch (Exception e)
+      {
+        Assert(GetExceptionMessage(e) == E_13, "Expected: " + E_13);
+      }
+      try
+      {
+        PendingInfusion(1, 51, null);
+      }
+      catch (Exception e)
+      {
+        Assert(GetExceptionMessage(e) == E_14, "Expected: " + E_14);
+      }
+      try
+      {
+        PendingInfusion(10, 1, null);
+      }
+      catch (Exception e)
+      {
+        Assert(GetExceptionMessage(e) == E_15, "Expected: " + E_15);
+      }
+      Map<string, object> pendingListPagination = PendingInfusion(1, 10, null);
+      Runtime.Notify("pendingListPagination 1", new object[] { pendingListPagination["totalPages"], pendingListPagination["totalPending"], pendingListPagination["pendingList"] });
+      pendingListPagination = PendingInfusion(1, 1, new UInt160[] { owner });
+      Runtime.Notify("pendingListPagination 2", new object[] { pendingListPagination["totalPages"], pendingListPagination["totalPending"], pendingListPagination["pendingList"] });
+      pendingListPagination = PendingInfusion(2, 1, new UInt160[] { admin1, admin2, owner });
+      Runtime.Notify("pendingListPagination 3", new object[] { pendingListPagination["totalPages"], pendingListPagination["totalPending"], pendingListPagination["pendingList"] });
     }
     private static void Debug_InfusionMintAndInfusionUpdate()
     {
