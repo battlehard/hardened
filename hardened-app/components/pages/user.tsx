@@ -10,7 +10,10 @@ import {
   Typography,
   styled,
 } from '@mui/material'
-import { ITradeProperties, VendorContract } from '@/utils/neo/contracts/vendor'
+import {
+  IPendingProperties,
+  HardenedContract,
+} from '@/utils/neo/contracts/hardened'
 import React, { ChangeEvent, useEffect, useState } from 'react'
 import { useWallet } from '@/context/wallet-provider'
 import Notification from '../notification'
@@ -108,7 +111,7 @@ export default function UserPage() {
 
   const { connectedWallet, network } = useWallet()
   const [loading, setLoading] = useState(true)
-  const [tradeList, setTradeList] = useState<ITradeProperties[]>([])
+  const [tradeList, setTradeList] = useState<IPendingProperties[]>([])
   const [openModal, setOpenModal] = useState(false)
   const handleModalOpen = () => {
     setOpenModal(true)
@@ -230,72 +233,74 @@ export default function UserPage() {
     }
   }
 
-  const fetchListTrade = async () => {
-    setLoading(true)
-    try {
-      const result = await new VendorContract(network).ListTrade()
-      setTradeList(result.tradeList)
-      // Initialize values for each row
-      setIsValidPurchasePackages(new Array(result.tradeList.length).fill(true))
-      setInputPurchasePackages(new Array(result.tradeList.length).fill(''))
-    } catch (e: any) {
-      if (e.type !== undefined) {
-        showErrorPopup(`Error: ${e.type} ${e.description}`)
-      }
-      console.error(e)
-    }
+  // const fetchListTrade = async () => {
+  //   setLoading(true)
+  //   try {
+  //     const result = await new HardenedContract(network).ListTrade()
+  //     setTradeList(result.pendingList)
+  //     // Initialize values for each row
+  //     setIsValidPurchasePackages(
+  //       new Array(result.pendingList.length).fill(true)
+  //     )
+  //     setInputPurchasePackages(new Array(result.pendingList.length).fill(''))
+  //   } catch (e: any) {
+  //     if (e.type !== undefined) {
+  //       showErrorPopup(`Error: ${e.type} ${e.description}`)
+  //     }
+  //     console.error(e)
+  //   }
 
-    setLoading(false)
-  }
+  //   setLoading(false)
+  // }
 
-  useEffect(() => {
-    fetchListTrade()
-  }, [])
+  // useEffect(() => {
+  //   fetchListTrade()
+  // }, [])
 
-  const handleCreateTrade = async () => {
-    if (connectedWallet) {
-      try {
-        const txid = await new VendorContract(network).CreateTrade(
-          connectedWallet,
-          inputOfferTokenHash,
-          Number(inputOfferTokenAmount),
-          Number(inputOfferPackages),
-          inputPurchaseTokenHash,
-          Number(inputPurchasePrice)
-        )
-        showSuccessPopup(txid)
-        handleModalClose()
-      } catch (e: any) {
-        if (e.type !== undefined) {
-          showErrorPopup(`Error: ${e.type} ${e.description}`)
-        }
-        console.log(e)
-      }
-    }
-  }
+  // const handleCreateTrade = async () => {
+  //   if (connectedWallet) {
+  //     try {
+  //       const txid = await new HardenedContract(network).CreateTrade(
+  //         connectedWallet,
+  //         inputOfferTokenHash,
+  //         Number(inputOfferTokenAmount),
+  //         Number(inputOfferPackages),
+  //         inputPurchaseTokenHash,
+  //         Number(inputPurchasePrice)
+  //       )
+  //       showSuccessPopup(txid)
+  //       handleModalClose()
+  //     } catch (e: any) {
+  //       if (e.type !== undefined) {
+  //         showErrorPopup(`Error: ${e.type} ${e.description}`)
+  //       }
+  //       console.log(e)
+  //     }
+  //   }
+  // }
 
-  const handleExecuteTrade = async (
-    tradeId: number,
-    purchaseTokenHash: string,
-    purchasePackages: number
-  ) => {
-    if (connectedWallet) {
-      try {
-        const txid = await new VendorContract(network).ExecuteTrade(
-          connectedWallet,
-          tradeId,
-          purchaseTokenHash,
-          purchasePackages
-        )
-        showSuccessPopup(txid)
-      } catch (e: any) {
-        if (e.type !== undefined) {
-          showErrorPopup(`Error: ${e.type} ${e.description}`)
-        }
-        console.log(e)
-      }
-    }
-  }
+  // const handleExecuteTrade = async (
+  //   tradeId: number,
+  //   purchaseTokenHash: string,
+  //   purchasePackages: number
+  // ) => {
+  //   if (connectedWallet) {
+  //     try {
+  //       const txid = await new HardenedContract(network).ExecuteTrade(
+  //         connectedWallet,
+  //         tradeId,
+  //         purchaseTokenHash,
+  //         purchasePackages
+  //       )
+  //       showSuccessPopup(txid)
+  //     } catch (e: any) {
+  //       if (e.type !== undefined) {
+  //         showErrorPopup(`Error: ${e.type} ${e.description}`)
+  //       }
+  //       console.log(e)
+  //     }
+  //   }
+  // }
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -311,81 +316,6 @@ export default function UserPage() {
       {loading && <MessagePanel message="Loading" />}
       {!loading && tradeList.length == 0 && (
         <MessagePanel message="No Trade in the pool" />
-      )}
-      {!loading && tradeList.length > 0 && (
-        <Container>
-          <ContainerRowForPool>
-            <Div>Trade ID</Div>
-            <Div>Owner Address</Div>
-            <Div>Offer Token Hash</Div>
-            <Div>Amount Per Package</Div>
-            <Div>Offer Packages</Div>
-            <Div>Sold Packages</Div>
-            <Div>Purchase Token Hash</Div>
-            <Div>Purchase Price</Div>
-            <Div>Action</Div>
-          </ContainerRowForPool>
-          {tradeList.map((trade, index) => {
-            const inputPurchasePackagesId = INPUT_PURCHASE_PACKAGES_ID + index
-            return (
-              <ContainerRowForPool key={index}>
-                <Div>{trade.id}</Div>
-                <Div>{trade.owner}</Div>
-                <Div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                  }}
-                >
-                  <div>{AddressShorten(trade.offerTokenHash)}</div>
-                  <Image src={trade.offerTokenImageUrl} />
-                  <div>{trade.offerTokenSymbol}</div>
-                </Div>
-                <Div>{getDecimalForm(trade.amountPerPackage, 8)}</Div>
-                <Div>{trade.offerPackages}</Div>
-                <Div>{trade.soldPackages}</Div>
-                <Div>{trade.purchaseTokenHash}</Div>
-                <Div>{getDecimalForm(trade.purchasePrice, 8)}</Div>
-                <Div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Input
-                    id={inputPurchasePackagesId}
-                    placeholder="Qty."
-                    defaultValue=""
-                    style={{ width: '60px', marginBottom: '10px' }}
-                    value={inputPurchasePackages[index]}
-                    onChange={handleNumberChange}
-                    error={!isValidPurchasePackages[index]}
-                  />
-                  <Button
-                    disabled={
-                      !connectedWallet ||
-                      !isValidPurchasePackages[index] ||
-                      inputPurchasePackages[index].length == 0 ||
-                      Number(inputPurchasePackages[index]) == 0
-                    }
-                    variant="outlined"
-                    onClick={() => {
-                      handleExecuteTrade(
-                        trade.id,
-                        trade.purchaseTokenHash,
-                        Number(inputPurchasePackages[index])
-                      )
-                    }}
-                  >
-                    Trade
-                  </Button>
-                </Div>
-              </ContainerRowForPool>
-            )
-          })}
-        </Container>
       )}
       <Modal
         open={openModal}
@@ -473,9 +403,6 @@ export default function UserPage() {
               disabled={isDisable()}
               style={{ marginTop: '25px', marginLeft: '25px' }}
               variant="outlined"
-              onClick={() => {
-                handleCreateTrade()
-              }}
             >
               Create
             </Button>

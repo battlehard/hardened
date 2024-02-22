@@ -17,6 +17,12 @@ export const stackJsonToObject = (item: any) => {
       value = Object.assign({}, ...value)
 
       return value
+    } else if (item.type && item.type == 'ByteString') {
+      const value = base64ToHash160(item.value)
+      const regex = /^[0-9a-f]{40}$/i // Match exactly 40 hexadecimal characters
+      const isScript = regex.test(value)
+      if (isScript) return '0x' + value
+      else return base64ToString(item.value)
     } else {
       let key = u.base642utf8(item.key.value)
       let value = item.value.value
