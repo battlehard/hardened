@@ -42,12 +42,6 @@ namespace Hardened
       AdminHashesStorage.Put(contractHash);
     }
 
-    public static List<UInt160> GetAdmin()
-    {
-      CheckContractAuthorization();
-      return AdminHashesStorage.List();
-    }
-
     public static void DeleteAdmin(UInt160 contractHash)
     {
       CheckContractAuthorization();

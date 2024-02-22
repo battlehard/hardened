@@ -20,6 +20,12 @@ namespace Hardened
     }
 
     [Safe]
+    public static List<UInt160> GetAdmin()
+    {
+      return AdminHashesStorage.List();
+    }
+
+    [Safe]
     public static Map<string, object> PendingInfusion(BigInteger pageNumber, BigInteger pageSize, UInt160[] walletHashesList)
     {
       Assert(pageNumber > 0 && pageSize > 0, E_13);
