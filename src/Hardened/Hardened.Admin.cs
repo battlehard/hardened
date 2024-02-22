@@ -54,6 +54,12 @@ namespace Hardened
       AdminHashesStorage.Delete(contractHash);
     }
 
+    public static void SetBlueprintImageUrl(string url)
+    {
+      CheckContractAuthorization();
+      Storage.Put(Storage.CurrentContext, Prefix_Blueprint_Image_Url, url);
+    }
+
     public static void FeeUpdate(BigInteger? bTokenMintCost, BigInteger? bTokenUpdateCost,
                                  BigInteger? gasMintCost, BigInteger? gasUpdateCost, UInt160? walletPoolHash)
     {
