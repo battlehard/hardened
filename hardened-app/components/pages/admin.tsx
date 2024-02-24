@@ -6,10 +6,11 @@ import { useWallet } from '@/context/wallet-provider'
 import {
   ManageAdminAction,
   HardenedContract,
+  ReadMethod,
 } from '@/utils/neo/contracts/hardened'
 import React, { ChangeEvent, useEffect, useState } from 'react'
 import Notification from '../notification'
-import { HASH160_PATTERN } from '../constant'
+import { HASH160_PATTERN, IMAGE_URL_PATTERN } from '../constant'
 
 const Container = styled(Box)`
   max-width: 900px;
@@ -48,10 +49,23 @@ const MessagePanel = ({ message }: MessagePanelProps) => {
 }
 
 export default function AdminPage() {
+  // Wallet
+  const { connectedWallet, network } = useWallet()
   // Notification
   const [open, setOpen] = useState(false)
   const [severity, setSeverity] = useState<AlertColor>('success')
   const [msg, setMsg] = useState('')
+  const showPopup = (severity: AlertColor, message: string) => {
+    setOpen(true)
+    setSeverity(severity)
+    setMsg(message)
+  }
+  const showSuccessPopup = (txid: string) => {
+    showPopup('success', `Transaction submitted: txid = ${txid}`)
+  }
+  const showErrorPopup = (message: string) => {
+    showPopup('error', message)
+  }
   const handleClose = (
     event?: React.SyntheticEvent | Event,
     reason?: string
@@ -61,6 +75,37 @@ export default function AdminPage() {
     }
 
     setOpen(false)
+  }
+
+  const NotificationBox = () => {
+    return (
+      <Notification
+        open={open}
+        handleClose={handleClose}
+        severity={severity}
+        message={msg}
+      />
+    )
+  }
+
+  interface InvokeButtonProps {
+    isDisable: boolean
+    invoke: () => Promise<void>
+  }
+  const InvokeButton = ({ isDisable, invoke }: InvokeButtonProps) => {
+    return (
+      <Button
+        disabled={isDisable}
+        onClick={invoke}
+        style={{
+          marginTop: '25px',
+          marginLeft: '25px',
+          alignSelf: 'start',
+        }}
+      >
+        Invoke
+      </Button>
+    )
   }
 
   // TODO: Remaining Commands
@@ -79,7 +124,7 @@ export default function AdminPage() {
     },
     {
       label: 'SetBlueprintImageUrl',
-      component: <></>,
+      component: ManageBlueprintImage(),
     },
     {
       label: 'FeeUpdate',
@@ -96,7 +141,6 @@ export default function AdminPage() {
   ]
 
   function ManageAdmin(manageAdminAction: ManageAdminAction) {
-    const { connectedWallet, network } = useWallet()
     const [inputWalletHash, setInputWalletHash] = useState('')
     const [isValidHash, setIsValidHash] = useState(true)
     const isDisable = () => {
@@ -113,24 +157,14 @@ export default function AdminPage() {
       }
     }
 
-    const showPopup = (severity: AlertColor, message: string) => {
-      setOpen(true)
-      setSeverity(severity)
-      setMsg(message)
-    }
-    const showSuccessPopup = (txid: string) => {
-      showPopup('success', `Transaction submitted: txid = ${txid}`)
-    }
-    const showErrorPopup = (message: string) => {
-      showPopup('error', message)
-    }
-
     const [loading, setLoading] = useState(true)
     const [adminList, setAdminList] = useState<string[]>([])
     const getAdmin = async () => {
       setLoading(true)
       try {
-        const result = await new HardenedContract(network).GetAdmin()
+        const result = await new HardenedContract(network).Read(
+          ReadMethod.GET_ADMIN
+        )
         setAdminList(result)
       } catch (e: any) {
         if (e.type !== undefined) {
@@ -143,7 +177,7 @@ export default function AdminPage() {
     }
 
     useEffect(() => {
-      getAdmin()
+      if (manageAdminAction == ManageAdminAction.GET) getAdmin() // Only get for one action.
     }, [])
 
     const invoke = async () => {
@@ -206,25 +240,110 @@ export default function AdminPage() {
               error={!isValidHash}
               inputProps={{ maxLength: 42 }}
             />
-            <Button
-              disabled={isDisable()}
-              onClick={invoke}
-              style={{
-                marginTop: '25px',
-                marginLeft: '25px',
-                alignSelf: 'start',
-              }}
-            >
-              Invoke
-            </Button>
-            <Notification
-              open={open}
-              handleClose={handleClose}
-              severity={severity}
-              message={msg}
-            />
+            <InvokeButton isDisable={isDisable()} invoke={invoke} />
+            <NotificationBox />
           </>
         )}
+      </div>
+    )
+  }
+
+  function ManageBlueprintImage() {
+    const [loading, setLoading] = useState(true)
+    const [blueprintImageUrl, setBlueprintImageUrl] = useState<string>('')
+    const getBlueprintImageUrl = async () => {
+      setLoading(true)
+      try {
+        const result = await new HardenedContract(network).Read(
+          ReadMethod.GET_BLUEPRINT_IMAGE_URL
+        )
+        setBlueprintImageUrl(result)
+      } catch (e: any) {
+        if (e.type !== undefined) {
+          showErrorPopup(`Error: ${e.type} ${e.description}`)
+        }
+        console.error(e)
+      }
+
+      setLoading(false)
+    }
+
+    const [inputImageUrl, setInputImageUrl] = useState('')
+    const [isValidImageUrl, setIsValidImageUrl] = useState(true)
+    const isDisable = () => {
+      return !connectedWallet || !isValidImageUrl || inputImageUrl.length == 0
+    }
+
+    const handleImageUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value
+      setInputImageUrl(value)
+      if (value.length > 0) {
+        setIsValidImageUrl(IMAGE_URL_PATTERN.test(value))
+      } else {
+        setIsValidImageUrl(true)
+      }
+    }
+
+    const invoke = async () => {
+      if (connectedWallet) {
+        try {
+          const txid = await new HardenedContract(network).SetBlueprintImageUrl(
+            connectedWallet,
+            inputImageUrl
+          )
+          showSuccessPopup(txid)
+        } catch (e: any) {
+          if (e.type !== undefined) {
+            showErrorPopup(`Error: ${e.type} ${e.description}`)
+          }
+          console.log(e)
+        }
+      }
+    }
+
+    useEffect(() => {
+      getBlueprintImageUrl()
+    }, [])
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <>
+          {loading && <MessagePanel message="Loading" />}
+          {!loading && (
+            <Div
+              style={{
+                width: '450px',
+                marginTop: '25px',
+                marginLeft: '25px',
+              }}
+            >
+              Current Blueprint Image Url:{' '}
+              <span style={{ fontSize: '1.5em' }}>{blueprintImageUrl}</span>
+            </Div>
+          )}
+        </>
+        <>
+          <TextField
+            required
+            style={{
+              width: '450px',
+              marginTop: '25px',
+              marginLeft: '25px',
+            }}
+            label="Blueprint Image Url (Required)"
+            helperText={
+              isValidImageUrl
+                ? 'Please input full path Url starting from https, only accept png or jpg'
+                : 'Invalid url'
+            }
+            defaultValue=""
+            value={inputImageUrl}
+            onChange={handleImageUrlChange}
+            error={!isValidImageUrl}
+          />
+          <InvokeButton isDisable={isDisable()} invoke={invoke} />
+          <NotificationBox />
+        </>
       </div>
     )
   }

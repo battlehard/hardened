@@ -17,6 +17,11 @@ export enum ManageAdminAction {
   GET = 'Get',
 }
 
+export enum ReadMethod {
+  GET_ADMIN = 'getAdmin',
+  GET_BLUEPRINT_IMAGE_URL = 'getBlueprintImageUrl',
+}
+
 export const HARDENED_SCRIPT_HASH = {
   [TESTNET]: '0xefb1125ce1cf90476b1b1e049be07d81e6be3420',
   [MAINNET]: '',
@@ -65,21 +70,46 @@ export class HardenedContract {
       ],
     }
 
-    return new WalletAPI(connectedWallet.key).invoke(
-      connectedWallet.account.address,
-      invokeScript
-    )
+    return this.invoke(connectedWallet, invokeScript)
   }
 
-  GetAdmin = async (): Promise<string[]> => {
+  SetBlueprintImageUrl = async (
+    connectedWallet: IConnectedWallet,
+    blueprintImageUrl: string
+  ): Promise<string> => {
     const invokeScript: IInvokeScriptJson = {
-      operation: 'getAdmin',
+      operation: 'setBlueprintImageUrl',
       scriptHash: this.contractHash,
-      args: [],
+      args: [
+        {
+          type: 'String',
+          value: blueprintImageUrl,
+        },
+      ],
+    }
+
+    return this.invoke(connectedWallet, invokeScript)
+  }
+
+  Read = async (readMethod: ReadMethod, args = []): Promise<any> => {
+    const invokeScript: IInvokeScriptJson = {
+      operation: readMethod,
+      scriptHash: this.contractHash,
+      args: args,
     }
 
     const res = await Network.read(this.network, [invokeScript])
     console.log(res)
     return stackJsonToObject(res.stack[0])
+  }
+
+  private invoke(
+    connectedWallet: IConnectedWallet,
+    invokeScript: IInvokeScriptJson
+  ): string | PromiseLike<string> {
+    return new WalletAPI(connectedWallet.key).invoke(
+      connectedWallet.account.address,
+      invokeScript
+    )
   }
 }

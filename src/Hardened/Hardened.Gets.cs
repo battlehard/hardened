@@ -110,7 +110,7 @@ namespace Hardened
     }
 
     [Safe]
-    private static string GetBlueprintImageUrl()
+    public static string GetBlueprintImageUrl()
     {
       string url = (string)Storage.Get(Storage.CurrentContext, Prefix_Blueprint_Image_Url);
       return url == null ? "/blueprint/" : url;
