@@ -45,6 +45,14 @@ export interface IPendingListPagination {
   pendingList: IPendingProperties[]
 }
 
+export interface IFeeStructure {
+  bTokenMintCost: number
+  bTokenUpdateCost: number
+  gasMintCost: number
+  gasUpdateCost: number
+  walletPoolHash: string
+}
+
 export class HardenedContract {
   network: INetworkType
   contractHash: string
@@ -84,6 +92,40 @@ export class HardenedContract {
         {
           type: 'String',
           value: blueprintImageUrl,
+        },
+      ],
+    }
+
+    return this.invoke(connectedWallet, invokeScript)
+  }
+
+  FeeUpdate = async (
+    connectedWallet: IConnectedWallet,
+    feeStructure: IFeeStructure
+  ): Promise<string> => {
+    const invokeScript: IInvokeScriptJson = {
+      operation: 'feeUpdate',
+      scriptHash: this.contractHash,
+      args: [
+        {
+          type: 'Integer',
+          value: feeStructure.bTokenMintCost,
+        },
+        {
+          type: 'Integer',
+          value: feeStructure.bTokenUpdateCost,
+        },
+        {
+          type: 'Integer',
+          value: feeStructure.gasMintCost,
+        },
+        {
+          type: 'Integer',
+          value: feeStructure.gasUpdateCost,
+        },
+        {
+          type: 'Hash160',
+          value: feeStructure.walletPoolHash,
         },
       ],
     }

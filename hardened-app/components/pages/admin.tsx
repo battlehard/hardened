@@ -7,10 +7,11 @@ import {
   ManageAdminAction,
   HardenedContract,
   ReadMethod,
+  IFeeStructure,
 } from '@/utils/neo/contracts/hardened'
 import React, { ChangeEvent, useEffect, useState } from 'react'
 import Notification from '../notification'
-import { HASH160_PATTERN, IMAGE_URL_PATTERN } from '../constant'
+import { HASH160_PATTERN, IMAGE_URL_PATTERN, NUMBER_PATTERN } from '../constant'
 
 const Container = styled(Box)`
   max-width: 900px;
@@ -36,6 +37,12 @@ const Div = styled('div')(({ theme }) => ({
   padding: theme.spacing(1),
   textTransform: 'none',
 }))
+
+const InputTextField = styled(TextField)`
+  width: 600px;
+  margin-top: 25px;
+  margin-left: 25px;
+`
 
 interface MessagePanelProps {
   message: string
@@ -128,7 +135,7 @@ export default function AdminPage() {
     },
     {
       label: 'FeeUpdate',
-      component: <></>,
+      component: ManageFeeUpdate(),
     },
     {
       label: 'InfusionMint',
@@ -340,6 +347,189 @@ export default function AdminPage() {
             value={inputImageUrl}
             onChange={handleImageUrlChange}
             error={!isValidImageUrl}
+          />
+          <InvokeButton isDisable={isDisable()} invoke={invoke} />
+          <NotificationBox />
+        </>
+      </div>
+    )
+  }
+
+  function ManageFeeUpdate() {
+    const [inputWalletPoolHash, setInputWalletPoolHash] = useState('')
+    const [isValidHash, setIsValidHash] = useState(true)
+
+    const INPUT_B_TOKEN_MINT_COST_ID = 'input-b-token-mint-cost'
+    const [inputBTokenMintCost, setInputBTokenMintCost] = useState('')
+    const [isValidBTokenMintCost, setIsValidBTokenMintCost] = useState(true)
+
+    const INPUT_B_TOKEN_UPDATE_COST_ID = 'input-b-token-update-cost'
+    const [inputBTokenUpdateCost, setInputBTokenUpdateCost] = useState('')
+    const [isValidBTokenUpdateCost, setIsValidBTokenUpdateCost] = useState(true)
+
+    const INPUT_GAS_MINT_COST_ID = 'input-gas-mint-cost'
+    const [inputGasMintCost, setInputGasMintCost] = useState('')
+    const [isValidGasMintCost, setIsValidGasMintCost] = useState(true)
+
+    const INPUT_GAS_UPDATE_COST_ID = 'input-gas-update-cost'
+    const [inputGasUpdateCost, setInputGasUpdateCost] = useState('')
+    const [isValidGasUpdateCost, setIsValidGasUpdateCost] = useState(true)
+
+    const isDisable = () => {
+      return (
+        !connectedWallet ||
+        !isValidHash ||
+        inputWalletPoolHash.length == 0 ||
+        !isValidBTokenMintCost ||
+        inputBTokenMintCost.length == 0 ||
+        !isValidBTokenUpdateCost ||
+        inputBTokenUpdateCost.length == 0 ||
+        !isValidGasMintCost ||
+        inputGasMintCost.length == 0 ||
+        !isValidGasUpdateCost ||
+        inputGasUpdateCost.length == 0
+      )
+    }
+
+    const handleWalletHashChange = (event: ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value
+      setInputWalletPoolHash(value)
+      if (value.length > 0) {
+        setIsValidHash(HASH160_PATTERN.test(value))
+      } else {
+        setIsValidHash(true)
+      }
+    }
+
+    const handleNumberChange = (event: ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value
+      switch (event.target.id) {
+        case INPUT_B_TOKEN_MINT_COST_ID:
+          setInputBTokenMintCost(value)
+          if (value.length > 0) {
+            setIsValidBTokenMintCost(NUMBER_PATTERN.test(value))
+          } else {
+            setIsValidBTokenMintCost(true)
+          }
+          break
+        case INPUT_B_TOKEN_UPDATE_COST_ID:
+          setInputBTokenUpdateCost(value)
+          if (value.length > 0) {
+            setIsValidBTokenUpdateCost(NUMBER_PATTERN.test(value))
+          } else {
+            setIsValidBTokenUpdateCost(true)
+          }
+          break
+        case INPUT_GAS_MINT_COST_ID:
+          setInputGasMintCost(value)
+          if (value.length > 0) {
+            setIsValidGasMintCost(NUMBER_PATTERN.test(value))
+          } else {
+            setIsValidGasMintCost(true)
+          }
+          break
+        case INPUT_GAS_UPDATE_COST_ID:
+          setInputGasUpdateCost(value)
+          if (value.length > 0) {
+            setIsValidGasUpdateCost(NUMBER_PATTERN.test(value))
+          } else {
+            setIsValidGasUpdateCost(true)
+          }
+          break
+      }
+    }
+
+    const invoke = async () => {
+      if (connectedWallet) {
+        try {
+          const feeStructure: IFeeStructure = {
+            bTokenMintCost: Number(inputBTokenMintCost),
+            bTokenUpdateCost: Number(inputBTokenUpdateCost),
+            gasMintCost: Number(inputGasMintCost),
+            gasUpdateCost: Number(inputGasUpdateCost),
+            walletPoolHash: inputWalletPoolHash,
+          }
+          const txid = await new HardenedContract(network).FeeUpdate(
+            connectedWallet,
+            feeStructure
+          )
+          showSuccessPopup(txid)
+        } catch (e: any) {
+          if (e.type !== undefined) {
+            showErrorPopup(`Error: ${e.type} ${e.description}`)
+          }
+          console.log(e)
+        }
+      }
+    }
+
+    const costHelperText =
+      'Cost with BigInteger format. If the token use 8 decimal, then 1 token must input as 100000000'
+    const costErrorText = 'Must be number only'
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <>
+          <InputTextField
+            id={INPUT_B_TOKEN_MINT_COST_ID}
+            required
+            label="B token mint cost (Required)"
+            helperText={isValidBTokenMintCost ? costHelperText : costErrorText}
+            defaultValue=""
+            value={inputBTokenMintCost}
+            onChange={handleNumberChange}
+            error={!isValidBTokenMintCost}
+          />
+          <InputTextField
+            id={INPUT_B_TOKEN_UPDATE_COST_ID}
+            required
+            label="B token update cost (Required)"
+            helperText={
+              isValidBTokenUpdateCost ? costHelperText : costErrorText
+            }
+            defaultValue=""
+            value={inputBTokenUpdateCost}
+            onChange={handleNumberChange}
+            error={!isValidBTokenUpdateCost}
+          />
+          <InputTextField
+            id={INPUT_GAS_MINT_COST_ID}
+            required
+            label="GAS mint cost (Required)"
+            helperText={isValidGasMintCost ? costHelperText : costErrorText}
+            defaultValue=""
+            value={inputGasMintCost}
+            onChange={handleNumberChange}
+            error={!isValidGasMintCost}
+          />
+          <InputTextField
+            id={INPUT_GAS_UPDATE_COST_ID}
+            required
+            label="Gas update cost (Required)"
+            helperText={isValidGasUpdateCost ? costHelperText : costErrorText}
+            defaultValue=""
+            value={inputGasUpdateCost}
+            onChange={handleNumberChange}
+            error={!isValidGasUpdateCost}
+          />
+          <TextField
+            required
+            style={{
+              width: '450px',
+              marginTop: '25px',
+              marginLeft: '25px',
+            }}
+            label="Wallet Pool Hash (Required)"
+            helperText={
+              isValidHash
+                ? 'Pool wallet in Hash160 format start in 0x'
+                : 'Invalid hash'
+            }
+            defaultValue=""
+            value={inputWalletPoolHash}
+            onChange={handleWalletHashChange}
+            error={!isValidHash}
+            inputProps={{ maxLength: 42 }}
           />
           <InvokeButton isDisable={isDisable()} invoke={invoke} />
           <NotificationBox />
