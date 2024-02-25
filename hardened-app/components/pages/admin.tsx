@@ -115,7 +115,6 @@ export default function AdminPage() {
     )
   }
 
-  // TODO: Remaining Commands
   const pages: ITabPage[] = [
     {
       label: 'GetAdmin',
@@ -139,11 +138,11 @@ export default function AdminPage() {
     },
     {
       label: 'InfusionMint',
-      component: <></>,
+      component: <></>, // TODO: Remaining Commands
     },
     {
       label: 'InfusionUpdate',
-      component: <></>,
+      component: <></>, // TODO: Remaining Commands
     },
   ]
 

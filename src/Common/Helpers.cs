@@ -88,7 +88,7 @@ namespace Hardened
       return true;
     }
 
-    static bool IsHexChar(char c)
+    private static bool IsHexChar(char c)
     {
       return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
     }

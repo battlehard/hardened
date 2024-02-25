@@ -99,7 +99,8 @@ namespace Hardened
     {
       HardenedState token = GetState(tokenId);
       Map<string, object> map = new();
-      map["ownerAddress"] = token.Owner.ToAddress();
+      //map["ownerAddress"] = token.Owner.ToAddress(); changed back to Hash format
+      map["owner"] = token.Owner;
       map["name"] = tokenId;
       map["state"] = token.state;
       map["slotNftHashes"] = token.slotNftHashes;

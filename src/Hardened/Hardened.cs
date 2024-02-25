@@ -44,6 +44,7 @@ namespace Hardened
       if (!IsEmpty(bhNftId)) // Update
       {
         isMintRequest = false;
+        ValidateHardenedOwnership(bhNftId);
         Safe11Transfer(bhContractHash, bhContractHash, bhNftId); // transfer to lock
       }
       Safe17Transfer(payTokenHash, userWalletHash, bhContractHash, payTokenAmount);
@@ -79,6 +80,7 @@ namespace Hardened
           // If BH NFT is READY, transfer only new NFT.
           for (int i = 0; i < slotNftIds.Length; i++)
           {
+            ValidateExternalNftOwnership(slotNftHashes[i], slotNftIds[i]);
             Safe11Transfer(slotNftHashes[i], bhContractHash, slotNftIds[i]);
           }
         }
@@ -88,6 +90,7 @@ namespace Hardened
           Assert(slotNftIds.Length <= nft.level, E_11);
           for (int i = 0; i < slotNftIds.Length; i++)
           {
+            ValidateExternalNftOwnership(slotNftHashes[i], slotNftIds[i]);
             Safe11Transfer(slotNftHashes[i], bhContractHash, slotNftIds[i]);
           }
         }
@@ -96,6 +99,7 @@ namespace Hardened
       {
         for (int i = 0; i < slotNftIds.Length; i++)
         {
+          ValidateExternalNftOwnership(slotNftHashes[i], slotNftIds[i]);
           Safe11Transfer(slotNftHashes[i], bhContractHash, slotNftIds[i]);
         }
       }
@@ -119,6 +123,7 @@ namespace Hardened
       PendingStorage.Put(pending);
 
       // return clientPubKey and ContractPubKey
+      OnPreInfusion(clientPubKey, contractPubKey);
       return new string[2] { clientPubKey, contractPubKey };
     }
 
@@ -164,7 +169,7 @@ namespace Hardened
 
     public static void Unfuse(string bhNftId)
     {
-      HardenedState nftState = ValidateOwnership(bhNftId);
+      HardenedState nftState = ValidateHardenedOwnership(bhNftId);
       Assert(nftState.state == State.Ready, E_05);
       ReturnLockNFTs(nftState);
 
@@ -177,7 +182,7 @@ namespace Hardened
 
     public static void BurnInfusion(string bhNftId)
     {
-      HardenedState nftState = ValidateOwnership(bhNftId);
+      HardenedState nftState = ValidateHardenedOwnership(bhNftId);
       // If ready return locked NFTs
       if (nftState.state == State.Ready)
       {

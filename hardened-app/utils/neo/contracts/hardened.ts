@@ -22,6 +22,12 @@ export enum ReadMethod {
   GET_BLUEPRINT_IMAGE_URL = 'getBlueprintImageUrl',
 }
 
+export enum ArgumentType {
+  STRING = 'String',
+  INTEGER = 'Integer',
+  HASH160 = 'Hash160',
+}
+
 export const HARDENED_SCRIPT_HASH = {
   [TESTNET]: '0xefb1125ce1cf90476b1b1e049be07d81e6be3420',
   [MAINNET]: '',
@@ -51,6 +57,15 @@ export interface IFeeStructure {
   gasMintCost: number
   gasUpdateCost: number
   walletPoolHash: string
+}
+
+export interface IPreInfusionObject {
+  clientPubKey: string
+  payTokenHash: string
+  payTokenAmount: number
+  bhNftId: string | null
+  slotNftHashes: string[]
+  slotNftIds: string[]
 }
 
 export class HardenedContract {
@@ -123,12 +138,69 @@ export class HardenedContract {
           type: 'Integer',
           value: feeStructure.gasUpdateCost,
         },
+      ],
+    }
+
+    return this.invoke(connectedWallet, invokeScript)
+  }
+
+  PreInfusion = async (
+    connectedWallet: IConnectedWallet,
+    preInfusionObject: IPreInfusionObject
+  ): Promise<string> => {
+    const invokeScript: IInvokeScriptJson = {
+      operation: 'preInfusion',
+      scriptHash: this.contractHash,
+      args: [
+        {
+          type: 'String',
+          value: preInfusionObject.clientPubKey,
+        },
         {
           type: 'Hash160',
-          value: feeStructure.walletPoolHash,
+          value: preInfusionObject.payTokenHash,
+        },
+        {
+          type: 'Integer',
+          value: preInfusionObject.payTokenAmount,
+        },
+        {
+          type: 'String',
+          value:
+            preInfusionObject.bhNftId == null ? '' : preInfusionObject.bhNftId,
+        },
+        {
+          type: 'Array',
+          value: this.getArray(
+            ArgumentType.HASH160,
+            preInfusionObject.slotNftHashes
+          ),
+        },
+        {
+          type: 'Array',
+          value: this.getArray(
+            ArgumentType.STRING,
+            preInfusionObject.slotNftIds
+          ),
         },
       ],
     }
+
+    // Custom permission
+    invokeScript.signers = [
+      {
+        account: NeonWallet.getScriptHashFromAddress(
+          connectedWallet.account.address
+        ),
+        scopes: tx.WitnessScope.CustomContracts,
+        allowedContracts: [
+          this.contractHash,
+          GAS_SCRIPT_HASH,
+          preInfusionObject.payTokenHash,
+          ...preInfusionObject.slotNftHashes,
+        ],
+      },
+    ]
 
     return this.invoke(connectedWallet, invokeScript)
   }
@@ -153,5 +225,11 @@ export class HardenedContract {
       connectedWallet.account.address,
       invokeScript
     )
+  }
+
+  private getArray(type: ArgumentType, list: any[]) {
+    return list.map((s) => {
+      return { type, value: s }
+    })
   }
 }

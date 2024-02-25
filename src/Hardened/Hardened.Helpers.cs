@@ -1,4 +1,5 @@
-﻿using Neo.SmartContract.Framework;
+﻿using Neo;
+using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Native;
 using Neo.SmartContract.Framework.Services;
 using static Hardened.Helpers;
@@ -8,11 +9,16 @@ namespace Hardened
 {
   public partial class Hardened
   {
-    private static HardenedState ValidateOwnership(string bhNftId)
+    private static HardenedState ValidateHardenedOwnership(string bhNftId)
     {
       HardenedState nftState = GetState(bhNftId);
       Assert(Runtime.CheckWitness(nftState.Owner), E_04);
       return nftState;
+    }
+    private static void ValidateExternalNftOwnership(UInt160 contractHash, string nftId)
+    {
+      UInt160 nftOwner = (UInt160)((Map<string, object>)Contract.Call(contractHash, "properties", CallFlags.All, new object[] { nftId }))["owner"];
+      Assert(Runtime.CheckWitness(nftOwner), E_04);
     }
     private static void UpdateState(string bhNftId, HardenedState nftState)
     {
