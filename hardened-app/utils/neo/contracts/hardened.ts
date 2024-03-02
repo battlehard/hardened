@@ -148,6 +148,12 @@ export class HardenedContract {
     connectedWallet: IConnectedWallet,
     preInfusionObject: IPreInfusionObject
   ): Promise<string> => {
+    preInfusionObject.slotNftHashes = preInfusionObject.slotNftHashes.filter(
+      (hash) => hash !== ''
+    )
+    preInfusionObject.slotNftIds = preInfusionObject.slotNftIds.filter(
+      (id) => id !== ''
+    )
     const invokeScript: IInvokeScriptJson = {
       operation: 'preInfusion',
       scriptHash: this.contractHash,

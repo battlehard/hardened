@@ -1,25 +1,15 @@
 'use client'
 
+import { AlertColor, Box, Button, TextField, styled } from '@mui/material'
 import {
-  AlertColor,
-  Box,
-  Button,
-  Input,
-  Modal,
-  TextField,
-  Typography,
-  styled,
-} from '@mui/material'
-import {
-  IPendingProperties,
   HardenedContract,
+  IPreInfusionObject,
 } from '@/utils/neo/contracts/hardened'
 import React, { ChangeEvent, useEffect, useState } from 'react'
 import { useWallet } from '@/context/wallet-provider'
 import Notification from '../notification'
 import { HASH160_PATTERN, NUMBER_PATTERN } from '../constant'
-import { getDecimalForm } from '@/utils/neo/helpers'
-import { AddressShorten } from '@/utils/app-helpers'
+import TabPanel, { ITabPage } from '../tab-panel'
 
 const Container = styled(Box)`
   max-width: 900px;
@@ -29,15 +19,15 @@ const Container = styled(Box)`
   border-top: 1px solid #ccc;
 `
 
-const ContainerRowForPool = styled(Box)`
+const ContainerRowForSlot = styled(Box)`
   display: grid;
-  grid-template-columns: repeat(9, 1fr);
-  justify-items: center;
-  align-items: center;
-  text-align: center;
+  grid-template-columns: repeat(2, 475px);
+  justify-items: left;
+  align-items: left;
+  text-align: left;
   margin-bottom: 10px;
   overflow-wrap: anywhere;
-  border-bottom: 1px solid #ccc;
+  // border-bottom: 1px solid #ccc;
 `
 
 const Div = styled('div')(({ theme }) => ({
@@ -81,10 +71,23 @@ const MessagePanel = ({ message }: MessagePanelProps) => {
 }
 
 export default function UserPage() {
+  // Wallet
+  const { connectedWallet, network } = useWallet()
   // Notification
   const [open, setOpen] = useState(false)
   const [severity, setSeverity] = useState<AlertColor>('success')
   const [msg, setMsg] = useState('')
+  const showPopup = (severity: AlertColor, message: string) => {
+    setOpen(true)
+    setSeverity(severity)
+    setMsg(message)
+  }
+  const showSuccessPopup = (txid: string) => {
+    showPopup('success', `Transaction submitted: txid = ${txid}`)
+  }
+  const showErrorPopup = (message: string) => {
+    showPopup('error', message)
+  }
   const handleClose = (
     event?: React.SyntheticEvent | Event,
     reason?: string
@@ -96,325 +99,412 @@ export default function UserPage() {
     setOpen(false)
   }
 
-  const showPopup = (severity: AlertColor, message: string) => {
-    setOpen(true)
-    setSeverity(severity)
-    setMsg(message)
-  }
-
-  const showSuccessPopup = (txid: string) => {
-    showPopup('success', `Transaction submitted: txid = ${txid}`)
-  }
-  const showErrorPopup = (message: string) => {
-    showPopup('error', message)
-  }
-
-  const { connectedWallet, network } = useWallet()
-  const [loading, setLoading] = useState(true)
-  const [tradeList, setTradeList] = useState<IPendingProperties[]>([])
-  const [openModal, setOpenModal] = useState(false)
-  const handleModalOpen = () => {
-    setOpenModal(true)
-  }
-  const handleModalClose = () => {
-    setOpenModal(false)
-  }
-
-  const isDisable = () => {
+  const NotificationBox = () => {
     return (
-      !connectedWallet ||
-      !isValidOfferTokenHash ||
-      inputOfferTokenHash.length == 0 ||
-      !isValidPurchaseTokenHash ||
-      inputPurchaseTokenHash.length == 0 ||
-      !isValidOfferTokenAmount ||
-      inputOfferTokenAmount.length == 0 ||
-      !isValidOfferPackages ||
-      inputOfferPackages.length == 0 ||
-      !isValidPurchasePrice ||
-      inputPurchasePrice.length == 0
-    )
-  }
-
-  const INPUT_OFFER_TOKEN_HASH_ID = 'input-offer-token-hash'
-  const [isValidOfferTokenHash, setIsValidOfferTokenHash] = useState(true)
-  const [inputOfferTokenHash, setInputOfferTokenHash] = useState('')
-
-  const INPUT_PURCHASE_TOKEN_HASH_ID = 'input-purchase-token-hash'
-  const [isValidPurchaseTokenHash, setIsValidPurchaseTokenHash] = useState(true)
-  const [inputPurchaseTokenHash, setInputPurchaseTokenHash] = useState('')
-
-  const INPUT_OFFER_TOKEN_AMOUNT_ID = 'input-offer-token-amount'
-  const [isValidOfferTokenAmount, setIsValidOfferTokenAmount] = useState(true)
-  const [inputOfferTokenAmount, setInputOfferTokenAmount] = useState('')
-
-  const INPUT_OFFER_PACKAGES_ID = 'input-offer-packages'
-  const [isValidOfferPackages, setIsValidOfferPackages] = useState(true)
-  const [inputOfferPackages, setInputOfferPackages] = useState('')
-
-  const INPUT_PURCHASE_PRICE_ID = 'input-purchase-price'
-  const [isValidPurchasePrice, setIsValidPurchasePrice] = useState(true)
-  const [inputPurchasePrice, setInputPurchasePrice] = useState('')
-
-  const INPUT_PURCHASE_PACKAGES_ID = 'input-purchase-packages'
-  const [isValidPurchasePackages, setIsValidPurchasePackages] = useState<
-    boolean[]
-  >([true])
-  const [inputPurchasePackages, setInputPurchasePackages] = useState<string[]>([
-    '',
-  ])
-
-  const handleTokenHashChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const id = event.target.id
-    const value = event.target.value
-    switch (id) {
-      case INPUT_OFFER_TOKEN_HASH_ID:
-        setInputOfferTokenHash(value)
-        if (value.length > 0) {
-          setIsValidOfferTokenHash(HASH160_PATTERN.test(value))
-        } else {
-          setIsValidOfferTokenHash(true)
-        }
-        break
-      case INPUT_PURCHASE_TOKEN_HASH_ID:
-        setInputPurchaseTokenHash(value)
-        if (value.length > 0) {
-          setIsValidPurchaseTokenHash(HASH160_PATTERN.test(value))
-        } else {
-          setIsValidPurchaseTokenHash(true)
-        }
-        break
-    }
-  }
-
-  const handleNumberChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const id = event.target.id.startsWith(INPUT_PURCHASE_PACKAGES_ID)
-      ? INPUT_PURCHASE_PACKAGES_ID
-      : event.target.id
-    const index = event.target.id.startsWith(INPUT_PURCHASE_PACKAGES_ID)
-      ? Number(event.target.id.split(INPUT_PURCHASE_PACKAGES_ID)[1])
-      : 0
-    const value = event.target.value
-    switch (id) {
-      case INPUT_OFFER_TOKEN_AMOUNT_ID:
-        setInputOfferTokenAmount(value)
-        if (value.length > 0) {
-          setIsValidOfferTokenAmount(NUMBER_PATTERN.test(value))
-        } else {
-          setIsValidOfferTokenAmount(true)
-        }
-        break
-      case INPUT_OFFER_PACKAGES_ID:
-        setInputOfferPackages(value)
-        if (value.length > 0) {
-          setIsValidOfferPackages(NUMBER_PATTERN.test(value))
-        } else {
-          setIsValidOfferPackages(true)
-        }
-        break
-      case INPUT_PURCHASE_PRICE_ID:
-        setInputPurchasePrice(value)
-        if (value.length > 0) {
-          setIsValidPurchasePrice(NUMBER_PATTERN.test(value))
-        } else {
-          setIsValidPurchasePrice(true)
-        }
-        break
-      case INPUT_PURCHASE_PACKAGES_ID:
-        const updatedInputPurchasePackages = [...inputPurchasePackages]
-        updatedInputPurchasePackages[index] = value
-        setInputPurchasePackages(updatedInputPurchasePackages)
-        const isValid = NUMBER_PATTERN.test(value)
-        const updatedIsValidPurchasePackages = [...isValidPurchasePackages]
-        updatedIsValidPurchasePackages[index] =
-          value.length > 0 ? isValid : true
-        setIsValidPurchasePackages(updatedIsValidPurchasePackages)
-        break
-    }
-  }
-
-  // const fetchListTrade = async () => {
-  //   setLoading(true)
-  //   try {
-  //     const result = await new HardenedContract(network).ListTrade()
-  //     setTradeList(result.pendingList)
-  //     // Initialize values for each row
-  //     setIsValidPurchasePackages(
-  //       new Array(result.pendingList.length).fill(true)
-  //     )
-  //     setInputPurchasePackages(new Array(result.pendingList.length).fill(''))
-  //   } catch (e: any) {
-  //     if (e.type !== undefined) {
-  //       showErrorPopup(`Error: ${e.type} ${e.description}`)
-  //     }
-  //     console.error(e)
-  //   }
-
-  //   setLoading(false)
-  // }
-
-  // useEffect(() => {
-  //   fetchListTrade()
-  // }, [])
-
-  // const handleCreateTrade = async () => {
-  //   if (connectedWallet) {
-  //     try {
-  //       const txid = await new HardenedContract(network).CreateTrade(
-  //         connectedWallet,
-  //         inputOfferTokenHash,
-  //         Number(inputOfferTokenAmount),
-  //         Number(inputOfferPackages),
-  //         inputPurchaseTokenHash,
-  //         Number(inputPurchasePrice)
-  //       )
-  //       showSuccessPopup(txid)
-  //       handleModalClose()
-  //     } catch (e: any) {
-  //       if (e.type !== undefined) {
-  //         showErrorPopup(`Error: ${e.type} ${e.description}`)
-  //       }
-  //       console.log(e)
-  //     }
-  //   }
-  // }
-
-  // const handleExecuteTrade = async (
-  //   tradeId: number,
-  //   purchaseTokenHash: string,
-  //   purchasePackages: number
-  // ) => {
-  //   if (connectedWallet) {
-  //     try {
-  //       const txid = await new HardenedContract(network).ExecuteTrade(
-  //         connectedWallet,
-  //         tradeId,
-  //         purchaseTokenHash,
-  //         purchasePackages
-  //       )
-  //       showSuccessPopup(txid)
-  //     } catch (e: any) {
-  //       if (e.type !== undefined) {
-  //         showErrorPopup(`Error: ${e.type} ${e.description}`)
-  //       }
-  //       console.log(e)
-  //     }
-  //   }
-  // }
-
-  return (
-    <Box sx={{ width: '100%' }}>
-      <Container>
-        <Button
-          disabled={!connectedWallet}
-          variant="outlined"
-          onClick={handleModalOpen}
-        >
-          Create Trade
-        </Button>
-      </Container>
-      {loading && <MessagePanel message="Loading" />}
-      {!loading && tradeList.length == 0 && (
-        <MessagePanel message="No Trade in the pool" />
-      )}
-      <Modal
-        open={openModal}
-        onClose={handleModalClose}
-        aria-labelledby="modal-modal-title"
-      >
-        <Box sx={modalStyle}>
-          <Typography id="modal-modal-title" variant="h6" component="h2">
-            Trade Creation
-          </Typography>
-          <Container>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <InputTextField
-                id={INPUT_OFFER_TOKEN_HASH_ID}
-                required
-                label="Offer token Hash (Required)"
-                helperText={
-                  isValidOfferTokenHash
-                    ? 'Token contract in Hash160 format.'
-                    : 'Invalid hash'
-                }
-                defaultValue=""
-                value={inputOfferTokenHash}
-                onChange={handleTokenHashChange}
-                error={!isValidOfferTokenHash}
-              />
-              <InputTextField
-                id={INPUT_OFFER_TOKEN_AMOUNT_ID}
-                required
-                label="Offer token Amount (Required)"
-                helperText={
-                  isValidOfferTokenAmount
-                    ? 'Total amount for sell with BigInteger format. If the token use 8 decimal, then 1 token must input as 100000000'
-                    : 'Must be number only'
-                }
-                defaultValue=""
-                value={inputOfferTokenAmount}
-                onChange={handleNumberChange}
-                error={!isValidOfferTokenAmount}
-              />
-              <InputTextField
-                id={INPUT_OFFER_PACKAGES_ID}
-                required
-                label="Offer packages (Required)"
-                helperText={
-                  isValidOfferPackages
-                    ? 'Number of packages for sell, must be evenly divisible'
-                    : 'Must be number only'
-                }
-                defaultValue=""
-                value={inputOfferPackages}
-                onChange={handleNumberChange}
-                error={!isValidOfferPackages}
-              />
-              <InputTextField
-                id={INPUT_PURCHASE_TOKEN_HASH_ID}
-                required
-                label="Purchase token Hash (Required)"
-                helperText={
-                  isValidPurchaseTokenHash
-                    ? 'Token contract in Hash160 format.'
-                    : 'Invalid hash'
-                }
-                defaultValue=""
-                value={inputPurchaseTokenHash}
-                onChange={handleTokenHashChange}
-                error={!isValidPurchaseTokenHash}
-              />
-              <InputTextField
-                id={INPUT_PURCHASE_PRICE_ID}
-                required
-                label="Purchase price (Required)"
-                helperText={
-                  isValidPurchasePrice
-                    ? 'Price per package with BigInteger format'
-                    : 'Must be number only'
-                }
-                defaultValue=""
-                value={inputPurchasePrice}
-                onChange={handleNumberChange}
-                error={!isValidPurchasePrice}
-              />
-            </div>
-            <Button
-              disabled={isDisable()}
-              style={{ marginTop: '25px', marginLeft: '25px' }}
-              variant="outlined"
-            >
-              Create
-            </Button>
-          </Container>
-        </Box>
-      </Modal>
       <Notification
         open={open}
         handleClose={handleClose}
         severity={severity}
         message={msg}
       />
-    </Box>
-  )
+    )
+  }
+
+  interface InvokeButtonProps {
+    isDisable: boolean
+    invoke: () => Promise<void>
+  }
+  const InvokeButton = ({ isDisable, invoke }: InvokeButtonProps) => {
+    return (
+      <Button
+        disabled={isDisable}
+        onClick={invoke}
+        style={{
+          marginTop: '25px',
+          marginLeft: '25px',
+          alignSelf: 'start',
+        }}
+      >
+        Invoke
+      </Button>
+    )
+  }
+
+  // TODO: Remaining tabs
+  const pages: ITabPage[] = [
+    {
+      label: 'PreInfusion',
+      component: ManagePreInfusion(),
+    },
+    {
+      label: 'CancelInfusion',
+      component: <></>,
+    },
+    {
+      label: 'Unfuse',
+      component: <></>,
+    },
+    {
+      label: 'BurnInfusion',
+      component: <></>,
+    },
+  ]
+
+  function ManagePreInfusion() {
+    const [inputClientPubKey, setInputClientPubKey] = useState('')
+
+    const INPUT_PAY_TOKEN_HASH = 'input-pay-token-hash'
+    const [inputPayTokenHash, setInputPayTokenHash] = useState('')
+    const [isValidHash, setIsValidHash] = useState(true)
+
+    const [inputPayTokenAmount, setInputPayTokenAmount] = useState('')
+    const [isValidPayTokenAmount, setIsValidPayTokenAmount] = useState(true)
+
+    const INPUT_BH_NFT_ID_ID = 'input-bh-nft-id'
+    const [inputBhNftId, setInputBhNftId] = useState('')
+
+    const INPUT_SLOT_NFT_HASH_PREFIX = 'input-slot-nft-hash-'
+    const [inputSlotNftHash, setInputSlotNftHash] = useState<string[]>([
+      '',
+      '',
+      '',
+      '',
+    ])
+    const [isValidSlotNftHash, setIsValidSlotNftHash] = useState<boolean[]>([
+      true,
+      true,
+      true,
+      true,
+    ])
+    const INPUT_SLOT_NFT_ID_PREFIX = 'input-slot-nft-id-'
+    const [inputSlotNftId, setInputSlotNftId] = useState<string[]>([
+      '',
+      '',
+      '',
+      '',
+    ])
+    const [isAtLeastOneNftFill, setIsAtLeastOneNftFill] = useState(false)
+
+    const isDisable = () => {
+      return (
+        !connectedWallet ||
+        !isValidHash ||
+        inputPayTokenHash.length == 0 ||
+        !isValidPayTokenAmount ||
+        inputPayTokenAmount.length == 0 ||
+        !isAtLeastOneNftFill
+      )
+    }
+
+    const checkAtLeastOneSlotFilled = (
+      inputSlotNftHash: string[],
+      inputSlotNftId: string[]
+    ): void => {
+      if (inputSlotNftHash.length != inputSlotNftId.length)
+        throw new Error('slot nft hash and id list must be the same length')
+      for (let i = 0; i < inputSlotNftId.length; i++) {
+        if (inputSlotNftHash[i].length > 0 && inputSlotNftId[i].length) {
+          setIsAtLeastOneNftFill(true)
+          return
+        }
+      }
+      setIsAtLeastOneNftFill(false)
+    }
+
+    const handleHashChange = (event: ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value
+
+      if (event.target.id == INPUT_PAY_TOKEN_HASH) {
+        setInputPayTokenHash(value)
+        if (value.length > 0) {
+          setIsValidHash(HASH160_PATTERN.test(value))
+        } else {
+          setIsValidHash(true)
+        }
+      } else if (event.target.id.match(INPUT_SLOT_NFT_HASH_PREFIX)) {
+        const index = Number(
+          event.target.id.split(INPUT_SLOT_NFT_HASH_PREFIX)[1]
+        )
+        setInputSlotNftHash((prevInputSlotNftHash) => {
+          const updatedInputSlotNftHash = [...prevInputSlotNftHash]
+          updatedInputSlotNftHash[index] = value
+          checkAtLeastOneSlotFilled(updatedInputSlotNftHash, inputSlotNftId)
+          return updatedInputSlotNftHash
+        })
+        if (value.length > 0) {
+          setIsValidSlotNftHash((prevIsValidSlotNftHash) => {
+            const updateIsValidSlotNftHash = [...prevIsValidSlotNftHash]
+            updateIsValidSlotNftHash[index] = HASH160_PATTERN.test(value)
+            return updateIsValidSlotNftHash
+          })
+        } else {
+          setIsValidSlotNftHash((prevIsValidSlotNftHash) => {
+            const updateIsValidSlotNftHash = [...prevIsValidSlotNftHash]
+            updateIsValidSlotNftHash[index] = true
+            return updateIsValidSlotNftHash
+          })
+        }
+      }
+    }
+
+    const handleNumberChange = (event: ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value
+      setInputPayTokenAmount(value)
+      if (value.length > 0) {
+        setIsValidPayTokenAmount(NUMBER_PATTERN.test(value))
+      } else {
+        setIsValidPayTokenAmount(true)
+      }
+    }
+
+    const handleTextChange = (event: ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value
+
+      if (event.target.id == INPUT_BH_NFT_ID_ID) {
+        setInputBhNftId(value)
+      } else if (event.target.id.match(INPUT_SLOT_NFT_ID_PREFIX)) {
+        const index = Number(event.target.id.split(INPUT_SLOT_NFT_ID_PREFIX)[1])
+        setInputSlotNftId((prevInputSlotNftId) => {
+          const updatedInputSlotNftId = [...prevInputSlotNftId]
+          updatedInputSlotNftId[index] = value
+          checkAtLeastOneSlotFilled(inputSlotNftHash, updatedInputSlotNftId)
+          return updatedInputSlotNftId
+        })
+      }
+    }
+
+    const invoke = async () => {
+      if (connectedWallet) {
+        try {
+          const preInfusionObj: IPreInfusionObject = {
+            clientPubKey: inputClientPubKey,
+            payTokenHash: inputPayTokenHash,
+            payTokenAmount: Number(inputPayTokenAmount),
+            bhNftId: inputBhNftId,
+            slotNftHashes: inputSlotNftHash.filter((hash) => hash !== ''),
+            slotNftIds: inputSlotNftId.filter((id) => id !== ''),
+          }
+
+          const txid = await new HardenedContract(network).PreInfusion(
+            connectedWallet,
+            preInfusionObj
+          )
+          showSuccessPopup(txid)
+        } catch (e: any) {
+          if (e.type !== undefined) {
+            showErrorPopup(`Error: ${e.type} ${e.description}`)
+          }
+          console.log(e)
+        }
+      }
+    }
+
+    const genClientPubKey = (bytesLength: number): void => {
+      if (!connectedWallet) return
+      // Generate a random byte array of specified length
+      const randomBytes = new Uint8Array(bytesLength)
+      for (let i = 0; i < bytesLength; i++) {
+        randomBytes[i] = Math.floor(Math.random() * 256) // Generate random byte (0-255)
+      }
+
+      let clientPubKey = Buffer.from(randomBytes).toString('base64')
+
+      clientPubKey =
+        clientPubKey.substring(0, clientPubKey.length - 4) +
+        connectedWallet.account.address.substring(
+          connectedWallet.account.address.length - 4
+        )
+
+      setInputClientPubKey(clientPubKey)
+    }
+
+    useEffect(() => {
+      if (connectedWallet) {
+        genClientPubKey(16)
+      }
+    }, [connectedWallet])
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {connectedWallet && (
+          <InputTextField
+            disabled
+            required
+            label="ClientPubKey"
+            value={inputClientPubKey}
+          />
+        )}
+        <TextField
+          required
+          id={INPUT_PAY_TOKEN_HASH}
+          style={{
+            width: '450px',
+            marginTop: '25px',
+            marginLeft: '25px',
+          }}
+          label="Pay Token Hash (Required)"
+          helperText={
+            isValidHash
+              ? 'Pay token in Hash160 format start in 0x'
+              : 'Invalid hash'
+          }
+          value={inputPayTokenHash}
+          onChange={handleHashChange}
+          error={!isValidHash}
+          inputProps={{ maxLength: 42 }}
+        />
+        <InputTextField
+          required
+          label="Pay Token Amount (Required)"
+          helperText={
+            isValidPayTokenAmount
+              ? 'Amount with BigInteger format. If the token use 8 decimal, then 1 token must input as 100000000'
+              : 'Must be number only'
+          }
+          value={inputPayTokenAmount}
+          onChange={handleNumberChange}
+          error={!isValidPayTokenAmount}
+        />
+        <TextField
+          id={INPUT_BH_NFT_ID_ID}
+          style={{
+            width: '450px',
+            marginTop: '25px',
+            marginLeft: '25px',
+          }}
+          label="BH NFT ID (Optional)"
+          value={inputBhNftId}
+          onChange={handleTextChange}
+        />
+        <ContainerRowForSlot>
+          <TextField
+            id={INPUT_SLOT_NFT_HASH_PREFIX + '0'}
+            style={{
+              width: '450px',
+              marginTop: '25px',
+              marginLeft: '25px',
+            }}
+            label="Slot 1 NFT Hash (Optional at least 1 slot must have value)"
+            value={inputSlotNftHash[0]}
+            onChange={handleHashChange}
+            helperText={
+              isValidSlotNftHash[0]
+                ? 'Hash160 format start in 0x'
+                : 'Invalid hash'
+            }
+            error={!isValidSlotNftHash[0]}
+            inputProps={{ maxLength: 42 }}
+          />
+          <TextField
+            id={INPUT_SLOT_NFT_ID_PREFIX + '0'}
+            style={{
+              width: '450px',
+              marginTop: '25px',
+              marginLeft: '25px',
+            }}
+            label="Slot 1 NFT ID (Optional at least 1 slot must have value)"
+            value={inputSlotNftId[0]}
+            onChange={handleTextChange}
+          />
+        </ContainerRowForSlot>
+        <ContainerRowForSlot>
+          <TextField
+            id={INPUT_SLOT_NFT_HASH_PREFIX + '1'}
+            style={{
+              width: '450px',
+              marginTop: '25px',
+              marginLeft: '25px',
+            }}
+            label="Slot 2 NFT Hash (Optional at least 1 slot must have value)"
+            value={inputSlotNftHash[1]}
+            onChange={handleHashChange}
+            helperText={
+              isValidSlotNftHash[1]
+                ? 'Hash160 format start in 0x'
+                : 'Invalid hash'
+            }
+            error={!isValidSlotNftHash[1]}
+            inputProps={{ maxLength: 42 }}
+          />
+          <TextField
+            id={INPUT_SLOT_NFT_ID_PREFIX + '1'}
+            style={{
+              width: '450px',
+              marginTop: '25px',
+              marginLeft: '25px',
+            }}
+            label="Slot 2 NFT ID (Optional at least 1 slot must have value)"
+            value={inputSlotNftId[1]}
+            onChange={handleTextChange}
+          />
+        </ContainerRowForSlot>
+        <ContainerRowForSlot>
+          <TextField
+            id={INPUT_SLOT_NFT_HASH_PREFIX + '2'}
+            style={{
+              width: '450px',
+              marginTop: '25px',
+              marginLeft: '25px',
+            }}
+            label="Slot 3 NFT Hash (Optional at least 1 slot must have value)"
+            value={inputSlotNftHash[2]}
+            onChange={handleHashChange}
+            helperText={
+              isValidSlotNftHash[2]
+                ? 'Hash160 format start in 0x'
+                : 'Invalid hash'
+            }
+            error={!isValidSlotNftHash[2]}
+            inputProps={{ maxLength: 42 }}
+          />
+          <TextField
+            id={INPUT_SLOT_NFT_ID_PREFIX + '2'}
+            style={{
+              width: '450px',
+              marginTop: '25px',
+              marginLeft: '25px',
+            }}
+            label="Slot 3 NFT ID (Optional at least 1 slot must have value)"
+            value={inputSlotNftId[2]}
+            onChange={handleTextChange}
+          />
+        </ContainerRowForSlot>
+        <ContainerRowForSlot>
+          <TextField
+            id={INPUT_SLOT_NFT_HASH_PREFIX + '3'}
+            style={{
+              width: '450px',
+              marginTop: '25px',
+              marginLeft: '25px',
+            }}
+            label="Slot 4 NFT Hash (Optional at least 1 slot must have value)"
+            value={inputSlotNftHash[3]}
+            onChange={handleHashChange}
+            helperText={
+              isValidSlotNftHash[3]
+                ? 'Hash160 format start in 0x'
+                : 'Invalid hash'
+            }
+            error={!isValidSlotNftHash[3]}
+            inputProps={{ maxLength: 42 }}
+          />
+          <TextField
+            id={INPUT_SLOT_NFT_ID_PREFIX + '3'}
+            style={{
+              width: '450px',
+              marginTop: '25px',
+              marginLeft: '25px',
+            }}
+            label="Slot 4 NFT ID (Optional at least 1 slot must have value)"
+            value={inputSlotNftId[3]}
+            onChange={handleTextChange}
+          />
+        </ContainerRowForSlot>
+        <InvokeButton isDisable={isDisable()} invoke={invoke} />
+        <NotificationBox />
+      </div>
+    )
+  }
+
+  return <TabPanel pages={pages} />
 }
