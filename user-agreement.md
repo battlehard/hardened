@@ -1,9 +1,7 @@
 # Battle Hard Contract (Locker)
 
 ## About
-Battle Hardened is a soft locker system, where users can create lockers that get minted with stats by external server. Users can also unfuse items (soft burn) to obtain a blueprint of the locker or hard burn to return all relevant items.
-
-**Typically Mint consumes 1 B token that must be recycled to the main wallet.**
+Battle Hardened is a soft locker system, where users can create lockers that get minted with stats by external server. Users can also unfuse items (soft burn) to obtain a blueprint of the locker, hard burn to return all relevant items, or cancel to return any pending operation.
 
 ### Storage:
 - **Pending**
