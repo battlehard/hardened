@@ -1,44 +1,159 @@
-# Legend Avatar Trade Smart Contract User Agreement
+# Battle Hard Contract (Locker)
 
-This User Agreement (the "Agreement") is entered into between the users of the Legend Avatar Trade Smart Contract (referred to as "Users") on this [date].
+## About
+Battle Hardened is a soft locker system, where users can create lockers that get minted with stats by external server. Users can also unfuse items (soft burn) to obtain a blueprint of the locker or hard burn to return all relevant items.
 
-By using the Legend Avatar Trade Smart Contract, Users agree to be bound by the terms and conditions outlined in this Agreement.
+**Typically Mint consumes 1 B token that must be recycled to the main wallet.**
 
-## 1. Ownership and Transfer of NFT Asset
+### Storage:
+- **Pending**
+  - Pubkey1 (must be unique or we throw error/reject)
+  - Pubkey2 (must be unique or we throw error/reject)
+  - Wallet
+  - Pay tokens
+  - BH NFT (conditional to update, not mint)
+  - Nft1
+  - Nft2
+  - Nft3
+  - Nft4
+- **Locker (BH NFT)**
+  - Pubkey3 (represents BH NFT ID)
+  - State (ready|blueprint)
+  - Nfl properties
+    - Nft1
+    - Nft2
+    - Nft3
+    - Nft4
 
-1.1. The Legend Avatar Trade Smart Contract facilitates the transfer of ownership of the "Legend Avatar" non-fungible token (NFT) asset.
+### PUBLIC METHODS
+#### Method: PreInfusion
+**Request:**
+  - Pubkey1
+  - String provided from dApp - used to identify the request to the server
+  - Pay Token (B or other) Value and contract not determined by contract, will depend on server approval
+  - BH NFT (Nullable - only for update)
+  - NFT1, NFT2, NFT3, NFT4 (Any NFT or Null)
+**Returns:**
+  - Pubkey1 (Provided from pre-infusion queue)
+  - Pubkey2 (Provided from contract as unique identifier - can be uuid, or simple counter)
+**Details:**
+  Items are placed in pending storage, tracking the pubkey1 (server-side key) and pubkey2 (smart contract key) - this links the two services together in an idiosyncratic way.
+  The last 4 digits of the pubkey1 must match the user wallet’s last 4 digits.
+  BH NFT is only present when dealing with an update/infusion.
 
-1.2. Users acknowledge that transferring the NFT Asset to another user through the smart contract grants exclusive rights and ownership of the associated "Legend Avatar" profile picture.
+#### Method: CancelInfusion
+**Request:**
+  - PubKey1
+  - PubKey2
+**Returns:**
+  - Submitted Pay Token
+  - Gas-fee
+  - Unused gas for mint (minus fees for trxns to ensure no deficit on gas)
+  - Pending NFTs
+**Details:**
+  Cancels the selected mint/update process and returns all relevant items pending in storage to the user minus gas fees.
+  Must be owner of pending snapshot or admin to invoke.
 
-1.3. Users understand that trading the NFT Asset back to the smart contract does not expire their ownership of derived works, but they cannot create future derived works until the NFT Asset is back in their possession.
+#### Method: PendingInfusions
+**Request:**
+  - Filter (admin only)
+**Return:**
+  - Array[]
+    - PubKey1
+    - Pubkey2
+    - Wallet
+    - NFT items (All 4 NFTs slots in order, and the BH NFT if applicable to validate request holdings)
+**Details:**
+  Provides a list of pending Fuse events, mint and update. Admin can read all, or filter by wallet/s. Non-admin (public) will return filtered results for their wallet ID only, regardless of filter status.
 
-1.4. Users acknowledge that transferring the NFT Asset does not transfer ownership of derived works from other users.
+#### Method: Unfuse
+**Request:**
+  - BH NFT (ready)
+**Return:**
+  - All locked NFTs
+  - Updated BH NFT (blueprint)
+**Details:**
+  BH NFT’s image is edited to point to /ready/ => /blueprint/.
+  BH’s stats are reset/stripped.
+  Meta.sync 
+  Attributes.nature.
+  Return all Locked NFTs + BH NFT to wallet.
 
-## 2. Public NFT Pool and Reserve Pool
+#### Method: BurnInfusion
+**Request:**
+  - BH NFT
+**Return:**
+  - All locked NFTs
+**Details:**
+  BH token is burned.
 
-2.1. The total number of "Legend Avatar" NFT Assets available in the public NFT pool will never exceed 100 per blockchain launch.
+### ADMIN METHODS
+#### Method: SetAdmin
+**Details:**
+  Standard SET for trusted wallets for admin actions.
 
-2.2. New avatars can be added to the reserve pool as per demand. Reserve pool avatars can only be used as guest profile avatars and are not exclusive or transferable until traded from an existing "Legend Avatar" NFT Asset.
+#### Method: GetAdmin
+**Details:**
+  Standard GET for trusted wallets for admin actions.
 
-## 3. Derived Works
+#### Method: DeleteAdmin
+**Details:**
+  Standard DELETE for trusted wallets for admin actions.
 
-3.1. Users who hold ownership of the NFT Asset have the right to create and expand on derived works based on the "Legend Avatar" profile picture.
+#### Method: InfusionMint
+**Request:**
+  - Pubkey1
+  - Pubkey2
+  - Contract hash (used to identify what official contract it is and used for transfer PayToken to)
+  - Pay ID (pay token hash)
+  - Pay Amount (pay token amount) //both ID and Amount will be used to verify correctness against pending storage
+  - NFT properties (base58)
+**Details:**
+  Pay Token needs to migrate to the contract owner's wallet for recycling (This will be Contract Hash)
+  Gas transfer to pool wallet then return the BH NFT to the user.
+  Delete pending storage reference.
 
-3.2. Users acknowledge that expanding on previously derived works is allowed, but creating new projects or works without ownership of the original NFT Asset is not permitted.
+#### Method: InfusionUpdate
+**Request:**
+  - Pubkey1
+  - Pubkey2
+  - User Wallet (for matching source)
+  - Pay Balance (correct balance to verify Pay token)
+  - Pay ID (contract hash to verify Pay token)
+  - Pool Wallet (send pay tokens too)
+  - NFT properties (base58)
+**Details:**
+  We update the graphic and new properties, then return the BH NFT to the user.
+  Then clear the pending storage for the target NFT (PubKey).
 
-## 4. Governing Law
+#### Method: FeeUpdate
+**Request**
+  - B Token mint cost
+  - B Token update cost
+  - GAS mint cost (should be a multiplier to ensure fees are covered for minting)
+  - GAS update cost (should have this also because of different fee for mint and update.)
+  - Wallet Pool
+**Details:**
+  Any of the items can be null, so specific values can be set by the admin as desired.
+  Wallet pool is where B tokens and excess gas will be stored, excess gas is used for server invoke methods for Minting and Updates.
 
-4.1. This Agreement shall be governed by and interpreted in accordance with international laws and regulations applicable to non-fungible tokens (NFTs) and blockchain technology.
+### Notes:
+- PubKey1: a UUID that associates the request from the client to the server. The server would typically generate this pubkey for the client to pass onto the blockchain, these allow the user and server to track the request from the client.
+- PubKey2: a UUID generated on the blockchain that helps identify the entry for admin mint, and owner Cancel operations.
 
-4.2. Any disputes arising out of or in connection with this Agreement shall be resolved through amicable negotiations between the parties or, if necessary, through alternative dispute resolution methods such as arbitration or mediation.
-
-## 5. Miscellaneous
-
-5.1. This Agreement constitutes the entire understanding between the Users and supersedes all prior agreements, whether written or oral, relating to the subject matter herein.
-
-5.2. Any modifications or amendments to this Agreement must be made in writing and agreed upon by all affected Users.
-
----
-
-By using the Legend Avatar Trade Smart Contract, Users acknowledge and agree to be bound by the terms and conditions of this User Agreement.
-
+### NFT attributes:
+- **Name**: string (GENERATED NAME) (provided name # token UID)
+- **Image**: string (URL) (IPFS namespace URL)
+- **State**: string (READY|BLUEPRINT) (flag for NFT state)
+- **Contract**: string[] (contract origin) (contract origins for each NFT)
+- **Meta**:
+  - **Seed**: string (seed string used for algorithm)
+  - **Skill**: number[] (2d array that shows attack/defense bias)
+  - **Sync**: number[] (values for sync status between all fusions)
+  - **Level**: number (evolution status, indicates max level of fusions)
+  - **Taste**: string (seed formula for likes and hates)
+  - **Rarity**: string (the quality of the seed bias)
+  - **Rank**: number (seed string used for algorithm)
+- **Attributes**:
+  - **Primary**: string (Primary element, normal as default)
+  - **Secondary**: string (Secondary
