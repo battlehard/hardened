@@ -138,15 +138,15 @@ export default function UserPage() {
     },
     {
       label: 'CancelInfusion',
-      component: <></>,
+      component: ManageCancelInfusion(),
     },
     {
       label: 'Unfuse',
-      component: <></>,
+      component: ManageUnfuse(),
     },
     {
       label: 'BurnInfusion',
-      component: <></>,
+      component: ManageBurnInfusion(),
     },
   ]
 
@@ -502,6 +502,153 @@ export default function UserPage() {
         </ContainerRowForSlot>
         <InvokeButton isDisable={isDisable()} invoke={invoke} />
         <NotificationBox />
+      </div>
+    )
+  }
+
+  function ManageCancelInfusion() {
+    const [inputClientPubKey, setInputClientPubKey] = useState('')
+    const INPUT_CLIENT_PUBKEY_ID = 'input-client-pubkey-id'
+    const [inputContractPubKey, setInputContractPubKey] = useState('')
+    const INPUT_CONTRACT_PUBKEY_ID = 'input-contract-pubkey-id'
+
+    const isDisable = () => {
+      return (
+        !connectedWallet ||
+        inputClientPubKey.length == 0 ||
+        inputContractPubKey.length == 0
+      )
+    }
+
+    const handleTextChange = (event: ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value
+
+      if (event.target.id == INPUT_CLIENT_PUBKEY_ID) {
+        setInputClientPubKey(value)
+      } else if (event.target.id == INPUT_CONTRACT_PUBKEY_ID) {
+        setInputContractPubKey(value)
+      }
+    }
+
+    const invoke = async () => {
+      if (connectedWallet) {
+        try {
+          const txid = await new HardenedContract(network).CancelInfusion(
+            connectedWallet,
+            inputClientPubKey,
+            inputContractPubKey
+          )
+          showSuccessPopup(txid)
+        } catch (e: any) {
+          if (e.type !== undefined) {
+            showErrorPopup(`Error: ${e.type} ${e.description}`)
+          }
+          console.log(e)
+        }
+      }
+    }
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <InputTextField
+          id={INPUT_CLIENT_PUBKEY_ID}
+          required
+          label="ClientPubKey"
+          value={inputClientPubKey}
+          onChange={handleTextChange}
+        />
+        <InputTextField
+          id={INPUT_CONTRACT_PUBKEY_ID}
+          required
+          label="ContractPubKey"
+          value={inputContractPubKey}
+          onChange={handleTextChange}
+        />
+        <InvokeButton isDisable={isDisable()} invoke={invoke} />
+      </div>
+    )
+  }
+
+  function ManageUnfuse() {
+    const [inputBhNftId, setInputBhNftId] = useState('')
+
+    const isDisable = () => {
+      return !connectedWallet || inputBhNftId.length == 0
+    }
+
+    const handleTextChange = (event: ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value
+      setInputBhNftId(value)
+    }
+
+    const invoke = async () => {
+      if (connectedWallet) {
+        try {
+          const txid = await new HardenedContract(network).Unfuse(
+            connectedWallet,
+            inputBhNftId
+          )
+          showSuccessPopup(txid)
+        } catch (e: any) {
+          if (e.type !== undefined) {
+            showErrorPopup(`Error: ${e.type} ${e.description}`)
+          }
+          console.log(e)
+        }
+      }
+    }
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <InputTextField
+          required
+          label="BH NFT ID"
+          value={inputBhNftId}
+          onChange={handleTextChange}
+        />
+        <InvokeButton isDisable={isDisable()} invoke={invoke} />
+      </div>
+    )
+  }
+
+  function ManageBurnInfusion() {
+    const [inputBhNftId, setInputBhNftId] = useState('')
+
+    const isDisable = () => {
+      return !connectedWallet || inputBhNftId.length == 0
+    }
+
+    const handleTextChange = (event: ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value
+      setInputBhNftId(value)
+    }
+
+    const invoke = async () => {
+      if (connectedWallet) {
+        try {
+          const txid = await new HardenedContract(network).BurnInfusion(
+            connectedWallet,
+            inputBhNftId
+          )
+          showSuccessPopup(txid)
+        } catch (e: any) {
+          if (e.type !== undefined) {
+            showErrorPopup(`Error: ${e.type} ${e.description}`)
+          }
+          console.log(e)
+        }
+      }
+    }
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <InputTextField
+          required
+          label="BH NFT ID"
+          value={inputBhNftId}
+          onChange={handleTextChange}
+        />
+        <InvokeButton isDisable={isDisable()} invoke={invoke} />
       </div>
     )
   }

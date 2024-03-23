@@ -68,6 +68,21 @@ export interface IPreInfusionObject {
   slotNftIds: string[]
 }
 
+export interface IPendingInfusionProperties {
+  clientPubKey: string
+  contractPubKey: string
+  userWalletAddress: string
+  bhNftId: string
+  slotNftHashes: string[]
+  slotNftIds: string[]
+}
+
+export interface IPendingInfusionListPagination {
+  totalPages: number
+  totalPending: number
+  pendingList: IPendingInfusionProperties[]
+}
+
 export class HardenedContract {
   network: INetworkType
   contractHash: string
@@ -211,6 +226,91 @@ export class HardenedContract {
     return this.invoke(connectedWallet, invokeScript)
   }
 
+  CancelInfusion = async (
+    connectedWallet: IConnectedWallet,
+    clientPubKey: string,
+    contractPubKey: string
+  ): Promise<string> => {
+    const invokeScript: IInvokeScriptJson = {
+      operation: 'cancelInfusion',
+      scriptHash: this.contractHash,
+      args: [
+        {
+          type: 'String',
+          value: clientPubKey,
+        },
+        {
+          type: 'String',
+          value: contractPubKey,
+        },
+      ],
+    }
+    return this.invoke(connectedWallet, invokeScript)
+  }
+
+  Unfuse = async (
+    connectedWallet: IConnectedWallet,
+    bhNftId: string
+  ): Promise<string> => {
+    const invokeScript: IInvokeScriptJson = {
+      operation: 'unfuse',
+      scriptHash: this.contractHash,
+      args: [
+        {
+          type: 'String',
+          value: bhNftId,
+        },
+      ],
+    }
+    return this.invoke(connectedWallet, invokeScript)
+  }
+
+  BurnInfusion = async (
+    connectedWallet: IConnectedWallet,
+    bhNftId: string
+  ): Promise<string> => {
+    const invokeScript: IInvokeScriptJson = {
+      operation: 'burnInfusion',
+      scriptHash: this.contractHash,
+      args: [
+        {
+          type: 'String',
+          value: bhNftId,
+        },
+      ],
+    }
+    return this.invoke(connectedWallet, invokeScript)
+  }
+
+  PendingInfusion = async (
+    pageNumber: number = 1,
+    pageSize: number = MAX_PAGE_LIMIT,
+    walletHashesList: string[] = []
+  ): Promise<IPendingInfusionListPagination> => {
+    const invokeScript: IInvokeScriptJson = {
+      operation: 'pendingInfusion',
+      scriptHash: this.contractHash,
+      args: [
+        {
+          type: 'Integer',
+          value: pageNumber,
+        },
+        {
+          type: 'Integer',
+          value: pageSize,
+        },
+        {
+          type: 'Array',
+          value: this.getArray(ArgumentType.HASH160, walletHashesList),
+        },
+      ],
+    }
+
+    const res = await Network.read(this.network, [invokeScript])
+    console.log(res)
+    return stackJsonToObject(res.stack[0])
+  }
+
   Read = async (readMethod: ReadMethod, args = []): Promise<any> => {
     const invokeScript: IInvokeScriptJson = {
       operation: readMethod,
@@ -219,7 +319,7 @@ export class HardenedContract {
     }
 
     const res = await Network.read(this.network, [invokeScript])
-    console.log(res)
+    if (process.env.NEXT_PUBLIC_IS_DEBUG) console.log(res)
     return stackJsonToObject(res.stack[0])
   }
 
