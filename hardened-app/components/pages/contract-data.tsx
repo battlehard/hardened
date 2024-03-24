@@ -1,17 +1,19 @@
 'use client'
 
-import { AlertColor, Box, TextField, styled } from '@mui/material'
+import { AlertColor, Box, Button, TextField, styled } from '@mui/material'
 import {
   HardenedContract,
   IPendingInfusionProperties,
 } from '@/utils/neo/contracts/hardened'
-import React, { useEffect, useState } from 'react'
+import React, { ChangeEvent, useEffect, useState } from 'react'
 import { useWallet } from '@/context/wallet-provider'
 import Notification from '../notification'
 import TabPanel, { ITabPage } from '../tab-panel'
+import { N3_ADDRESS_PATTERN } from '../constant'
+import { getScriptHashFromAddress } from '@cityofzion/neon-core/lib/wallet'
 
 const Container = styled(Box)`
-  max-width: 900px;
+  max-width: 1280px;
   margin: 25px auto 0px;
   display: flex;
   flex-direction: column;
@@ -20,7 +22,7 @@ const Container = styled(Box)`
 
 const ContainerRowForPool = styled(Box)`
   display: grid;
-  grid-template-columns: repeat(9, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   justify-items: center;
   align-items: center;
   text-align: center;
@@ -35,29 +37,6 @@ const Div = styled('div')(({ theme }) => ({
   textTransform: 'none',
 }))
 
-const modalStyle = {
-  position: 'absolute' as 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  width: 'auto',
-  bgcolor: 'background.paper',
-  border: '2px solid #000',
-  boxShadow: 24,
-  p: 4,
-}
-
-const InputTextField = styled(TextField)`
-  width: 600px;
-  margin-top: 25px;
-  margin-left: 25px;
-`
-
-const Image = styled('img')`
-  width: 32px;
-  height: 32px;
-`
-
 interface MessagePanelProps {
   message: string
 }
@@ -71,7 +50,7 @@ const MessagePanel = ({ message }: MessagePanelProps) => {
 
 export default function ContractDataPage() {
   // Wallet
-  const { connectedWallet, network } = useWallet()
+  const { network } = useWallet()
   // Notification
   const [open, setOpen] = useState(false)
   const [severity, setSeverity] = useState<AlertColor>('success')
@@ -98,17 +77,6 @@ export default function ContractDataPage() {
     setOpen(false)
   }
 
-  const NotificationBox = () => {
-    return (
-      <Notification
-        open={open}
-        handleClose={handleClose}
-        severity={severity}
-        message={msg}
-      />
-    )
-  }
-
   const pages: ITabPage[] = [
     {
       label: 'PendingInfusion',
@@ -117,16 +85,37 @@ export default function ContractDataPage() {
   ]
 
   function ManagePendingInfusion() {
+    // Filter
+    const [inputFilter, setInputFilter] = useState('')
+    const [isValidFilter, setIsValidFilter] = useState(true)
+    const handleTextChange = (event: ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value
+      setInputFilter(value)
+
+      let isValid = true
+      if (value.length > 0) {
+        value.split(',').forEach((address) => {
+          if (N3_ADDRESS_PATTERN.test(address) == false) {
+            isValid = false
+          }
+        })
+        setIsValidFilter(isValid)
+      } else {
+        setIsValidFilter(isValid)
+      }
+    }
     // Loading
     const [loading, setLoading] = useState(true)
     const [pendingList, setPendingList] = useState<
       IPendingInfusionProperties[]
     >([])
 
-    const fetchPendingInfusion = async () => {
+    const fetchPendingInfusion = async (filterList: string[] = []) => {
       setLoading(true)
       try {
-        const result = await new HardenedContract(network).PendingInfusion()
+        const result = await new HardenedContract(network).PendingInfusion(
+          filterList
+        )
         setPendingList(result.pendingList)
       } catch (e: any) {
         if (e.type !== undefined) {
@@ -138,12 +127,49 @@ export default function ContractDataPage() {
       setLoading(false)
     }
 
+    const CreateArrayFromFilterText = (inputFilter: string) => {
+      if (inputFilter.length == 0) return []
+      else {
+        return inputFilter
+          .split(',')
+          .map((address) => getScriptHashFromAddress(address))
+      }
+    }
+
     useEffect(() => {
-      fetchPendingInfusion()
+      fetchPendingInfusion(CreateArrayFromFilterText(inputFilter))
     }, [])
+
+    const filter = async () => {
+      fetchPendingInfusion(CreateArrayFromFilterText(inputFilter))
+    }
 
     return (
       <Box sx={{ width: '100%' }}>
+        <Container>
+          <TextField
+            style={{
+              marginTop: '25px',
+              marginLeft: '25px',
+            }}
+            label="Filter Wallet List (Optional)"
+            value={inputFilter}
+            onChange={handleTextChange}
+            helperText={
+              isValidFilter
+                ? 'Address List separate with comma. E.g. NZR5RJpeRqjP3aHFGoiKMDkCLfgxRuMLzh,NTsSEKhpngsRsLZDcrJpMUT7523fcdM9qF'
+                : 'Must be Address separate with comma (,)'
+            }
+            error={!isValidFilter}
+          />
+          <Button
+            style={{ width: '100px', marginLeft: '25px' }}
+            variant="outlined"
+            onClick={filter}
+          >
+            Filter
+          </Button>
+        </Container>
         {loading && <MessagePanel message="Loading" />}
         {!loading && pendingList.length == 0 && (
           <MessagePanel message="No PendingInfusion" />
@@ -165,8 +191,24 @@ export default function ContractDataPage() {
                   <Div>{pending.contractPubKey}</Div>
                   <Div>{pending.userWalletAddress}</Div>
                   <Div>{pending.bhNftId}</Div>
-                  <Div>{pending.slotNftHashes}</Div>
-                  <Div>{pending.slotNftIds}</Div>
+                  <Div>
+                    {pending.slotNftHashes.map((hash, index) => {
+                      return (
+                        <Div style={{ borderBottom: '1px solid' }} key={index}>
+                          {hash}
+                        </Div>
+                      )
+                    })}
+                  </Div>
+                  <Div>
+                    {pending.slotNftIds.map((nftId, index) => {
+                      return (
+                        <Div style={{ borderBottom: '1px solid' }} key={index}>
+                          {nftId}
+                        </Div>
+                      )
+                    })}
+                  </Div>
                 </ContainerRowForPool>
               )
             })}

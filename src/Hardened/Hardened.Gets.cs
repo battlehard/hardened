@@ -31,24 +31,21 @@ namespace Hardened
       Assert(pageNumber > 0 && pageSize > 0, E_13);
       Assert(pageSize <= MAX_PAGE_LIMIT, E_14);
 
-      UInt160 userWallet = ((Transaction)Runtime.ScriptContainer).Sender;
-
       BigInteger totalPending;
-      if (IsAdmin())
+      if (walletHashesList == null || walletHashesList.Length == 0)
       {
-        if (walletHashesList == null || walletHashesList.Length == 0)
-        {
-          totalPending = PendingStorage.Count(new UInt160[] { });
-        }
-        else
-        {
-          totalPending = PendingStorage.Count(walletHashesList);
-        }
+        totalPending = PendingStorage.Count(new UInt160[] { });
       }
       else
       {
-        totalPending = PendingStorage.Count(new UInt160[] { userWallet });
+        totalPending = PendingStorage.Count(walletHashesList);
       }
+
+      if (totalPending == 0) // Not found
+      {
+        return BuildReturnPendingInfusionObject(0, 0, new List<Map<string, object>>());
+      }
+
       // Calculate the total number of pages based on the total trades and page size
       BigInteger totalPages = totalPending / pageSize;
       if (totalPending % pageSize > 0)
@@ -61,28 +58,25 @@ namespace Hardened
       BigInteger skipCount = (pageNumber - 1) * pageSize;
 
       List<Map<string, object>> pendingList;
-      if (IsAdmin())
+      if (walletHashesList == null || walletHashesList.Length == 0)
       {
-        if (walletHashesList == null || walletHashesList.Length == 0)
-        {
-          pendingList = PendingStorage.ListAll(skipCount, pageSize);
-        }
-        else
-        {
-          pendingList = PendingStorage.ListByWallets(walletHashesList, skipCount, pageSize);
-        }
+        pendingList = PendingStorage.ListAll(skipCount, pageSize);
       }
       else
       {
-        pendingList = PendingStorage.ListByWallet(userWallet, skipCount, pageSize);
+        pendingList = PendingStorage.ListByWallets(walletHashesList, skipCount, pageSize);
       }
 
+      return BuildReturnPendingInfusionObject(totalPending, totalPages, pendingList);
+    }
+
+    private static Map<string, object> BuildReturnPendingInfusionObject(BigInteger totalPending, BigInteger totalPages, List<Map<string, object>> pendingList)
+    {
       // Initialize return variable
       Map<string, object> pendingPaginationData = new();
       pendingPaginationData["totalPages"] = totalPages;
       pendingPaginationData["totalPending"] = totalPending;
-      // Get list of active trades with pagination parameters
-      pendingPaginationData["pendingList"] = pendingList;
+      pendingPaginationData["pendingList"] = pendingList; // Get list of active trades with pagination parameters
       return pendingPaginationData;
     }
 

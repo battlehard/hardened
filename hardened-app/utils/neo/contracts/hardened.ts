@@ -20,6 +20,7 @@ export enum ManageAdminAction {
 export enum ReadMethod {
   GET_ADMIN = 'getAdmin',
   GET_BLUEPRINT_IMAGE_URL = 'getBlueprintImageUrl',
+  PENDING_INFUSION = 'pendingInfusion',
 }
 
 export enum ArgumentType {
@@ -283,32 +284,26 @@ export class HardenedContract {
   }
 
   PendingInfusion = async (
+    walletHashesList: string[],
     pageNumber: number = 1,
-    pageSize: number = MAX_PAGE_LIMIT,
-    walletHashesList: string[] = []
+    pageSize: number = MAX_PAGE_LIMIT
   ): Promise<IPendingInfusionListPagination> => {
-    const invokeScript: IInvokeScriptJson = {
-      operation: 'pendingInfusion',
-      scriptHash: this.contractHash,
-      args: [
-        {
-          type: 'Integer',
-          value: pageNumber,
-        },
-        {
-          type: 'Integer',
-          value: pageSize,
-        },
-        {
-          type: 'Array',
-          value: this.getArray(ArgumentType.HASH160, walletHashesList),
-        },
-      ],
-    }
+    const args: any = [
+      {
+        type: 'Integer',
+        value: pageNumber,
+      },
+      {
+        type: 'Integer',
+        value: pageSize,
+      },
+      {
+        type: 'Array',
+        value: this.getArray(ArgumentType.HASH160, walletHashesList),
+      },
+    ]
 
-    const res = await Network.read(this.network, [invokeScript])
-    console.log(res)
-    return stackJsonToObject(res.stack[0])
+    return this.Read(ReadMethod.PENDING_INFUSION, args)
   }
 
   Read = async (readMethod: ReadMethod, args = []): Promise<any> => {

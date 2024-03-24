@@ -85,7 +85,7 @@ namespace Hardened
       }
     }
 
-    public static class PendingStorage
+    public static class PendingStorage // TODO: Revise storage logic to use two set of keys, instead of one key with shorten hash
     {
       private static StorageMap pendingMap = new StorageMap(Storage.CurrentContext, Prefix_Pending);
       private static StorageMap walletFilterMap = new StorageMap(Storage.CurrentContext, Prefix_Wallet_Filter);
