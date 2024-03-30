@@ -20,24 +20,64 @@ namespace Hardened
     }
 
     [Safe]
-    public static List<Map<string, object>> PendingInfusion(BigInteger skipCount, BigInteger pageSize, UInt160[] walletHashesList)
+    public static List<UInt160> GetAdmin()
     {
-      if (IsAdmin())
+      return AdminHashesStorage.List();
+    }
+
+    [Safe]
+    public static Map<string, object> PendingInfusion(BigInteger pageNumber, BigInteger pageSize, UInt160[] walletHashesList)
+    {
+      Assert(pageNumber > 0 && pageSize > 0, E_13);
+      Assert(pageSize <= MAX_PAGE_LIMIT, E_14);
+
+      BigInteger totalPending;
+      if (walletHashesList == null || walletHashesList.Length == 0)
       {
-        if (walletHashesList == null || walletHashesList.Length == 0)
-        {
-          return PendingStorage.ListAll(skipCount, pageSize);
-        }
-        else
-        {
-          return PendingStorage.ListByWallets(walletHashesList, skipCount, pageSize);
-        }
+        totalPending = PendingStorage.Count(new UInt160[] { });
       }
       else
       {
-        UInt160 userWallet = ((Transaction)Runtime.ScriptContainer).Sender;
-        return PendingStorage.ListByWallet(userWallet, skipCount, pageSize);
+        totalPending = PendingStorage.Count(walletHashesList);
       }
+
+      if (totalPending == 0) // Not found
+      {
+        return BuildReturnPendingInfusionObject(0, 0, new List<Map<string, object>>());
+      }
+
+      // Calculate the total number of pages based on the total trades and page size
+      BigInteger totalPages = totalPending / pageSize;
+      if (totalPending % pageSize > 0)
+      {
+        totalPages += 1;
+      }
+      Assert(pageNumber <= totalPages, E_15);
+
+      // Calculate the number of items to skip based on the requested page and page size
+      BigInteger skipCount = (pageNumber - 1) * pageSize;
+
+      List<Map<string, object>> pendingList;
+      if (walletHashesList == null || walletHashesList.Length == 0)
+      {
+        pendingList = PendingStorage.ListAll(skipCount, pageSize);
+      }
+      else
+      {
+        pendingList = PendingStorage.ListByWallets(walletHashesList, skipCount, pageSize);
+      }
+
+      return BuildReturnPendingInfusionObject(totalPending, totalPages, pendingList);
+    }
+
+    private static Map<string, object> BuildReturnPendingInfusionObject(BigInteger totalPending, BigInteger totalPages, List<Map<string, object>> pendingList)
+    {
+      // Initialize return variable
+      Map<string, object> pendingPaginationData = new();
+      pendingPaginationData["totalPages"] = totalPages;
+      pendingPaginationData["totalPending"] = totalPending;
+      pendingPaginationData["pendingList"] = pendingList; // Get list of active trades with pagination parameters
+      return pendingPaginationData;
     }
 
     private static HardenedState GetState(string tokenId)
@@ -53,7 +93,8 @@ namespace Hardened
     {
       HardenedState token = GetState(tokenId);
       Map<string, object> map = new();
-      map["ownerAddress"] = token.Owner.ToAddress();
+      //map["ownerAddress"] = token.Owner.ToAddress(); changed back to Hash format
+      map["owner"] = token.Owner;
       map["name"] = tokenId;
       map["state"] = token.state;
       map["slotNftHashes"] = token.slotNftHashes;
@@ -64,7 +105,7 @@ namespace Hardened
     }
 
     [Safe]
-    private static string GetBlueprintImageUrl()
+    public static string GetBlueprintImageUrl()
     {
       string url = (string)Storage.Get(Storage.CurrentContext, Prefix_Blueprint_Image_Url);
       return url == null ? "/blueprint/" : url;

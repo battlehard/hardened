@@ -42,16 +42,16 @@ namespace Hardened
       AdminHashesStorage.Put(contractHash);
     }
 
-    public static List<UInt160> GetAdmin()
-    {
-      CheckContractAuthorization();
-      return AdminHashesStorage.List();
-    }
-
     public static void DeleteAdmin(UInt160 contractHash)
     {
       CheckContractAuthorization();
       AdminHashesStorage.Delete(contractHash);
+    }
+
+    public static void SetBlueprintImageUrl(string url)
+    {
+      CheckContractAuthorization();
+      Storage.Put(Storage.CurrentContext, Prefix_Blueprint_Image_Url, url);
     }
 
     public static void FeeUpdate(BigInteger? bTokenMintCost, BigInteger? bTokenUpdateCost,
@@ -74,6 +74,7 @@ namespace Hardened
     {
       CheckContractAuthorization();
       PendingObject pending = PendingStorage.Get(clientPubKey, contractPubKey);
+      Assert(pending.bhNftId == null || pending.bhNftId == "", E_16);
       // Pending object existing, check for matched pay token hash and amount
       Assert(pending.payTokenHash == payTokenHash && pending.payTokenAmount == payTokenAmount, E_06);
       // Transfer pay token from BH contract to provide contract hash
