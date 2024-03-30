@@ -325,6 +325,14 @@ namespace Hardened
       string updClientPubKey = GetClientPubKey(owner.ToAddress());
       clientAndContractPubKey = PreInfusion(updClientPubKey, NEO.Hash, 1, nftId2, new UInt160[] { Runtime.ExecutingScriptHash }, new string[] { "testNft_6" });
       string base58UpdProperties = "6FpByEy3dEgXhqrit7JittgsQZbuj6KyBpTPN6CpjRCu6Cxy4ErF42FhnPQBw1BYiDshDg5fZN5aAKkA4dTtBvv2PkHWTkzgVVYqkgiB39ypbjaHyPir2E7FCTLzJUiQjW33QF8TjK1fbBS2XRw22414TKAYfLs6iL7ioMhvDCzzTHbXBn82wnQS9io6cfMawnQ6iq7r1Dd3npi1h9j3itZ4E6MMmnfKVtczYRdXYN4Ti6LDqeQn4BS2nHifPmf4JKdDnRWMQFWHd289ztzxrudcuWMUsZS6jprAHBbBY5AbMB5WJdtXg6h3W5JvCMNKefkofjExN3a3LF3VvGHaXRyyrdzYBH2B7sgdZWpZBwVa9smPLVHRsQVBTQBf4zQaidjJLjysKUFrnaPQWkA7teEhEp2c81YYmvXW1PMJdXrXk2CGfWKQPi4P9wYWoecdbSpK9cptRUtLuKZGinBDRaagCrTZistxMAEvUeXzx27BU6Y3JWQBKMxfVgZEfXUXQkLJekbWaGiF7KpzKov3TvdQy91FpoU4sAFs4NDNgHsCqgZgogmzunPwqpZmCScNav9EbLLCcTT66Gu9FvE8PTRuaa5p6fwcXx5q8J5k6znj5cFZ6wcpkopwpRSUBcEQYCwxqKhYhG2pXv9VNJY746M9o9FN5tvUv7Da4FRDVGYuakQ4kKNKTzpfNacpgMiRuwNFEoXKfQzBuLrSxKwJtk5kUYfGqu4ETgX8gF9vzBaRPTuDagrSA2TGgEimrKY8tqFWjnU67r2M9LhJ3eKRhbP2DamfwMyP7b7c4msEbQybzGdsLNL53ia82Bac";
+      try
+      {
+        InfusionMint(clientAndContractPubKey[0], clientAndContractPubKey[1], owner, NEO.Hash, 1, base58UpdProperties);
+      }
+      catch (Exception e)
+      {
+        Assert(GetExceptionMessage(e) == E_16, "Expected: " + E_16);
+      }
       InfusionUpdate(clientAndContractPubKey[0], clientAndContractPubKey[1], owner, NEO.Hash, 1, base58UpdProperties);
       HardenedState updatedNft = GetState(nftId2);
       Runtime.Notify("Updated NFT State", new object[] { updatedNft });

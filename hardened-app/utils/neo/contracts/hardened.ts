@@ -69,6 +69,24 @@ export interface IPreInfusionObject {
   slotNftIds: string[]
 }
 
+export interface IInfusionMintObject {
+  clientPubKey: string
+  contractPubKey: string
+  contractHash: string
+  payTokenHash: string
+  payTokenAmount: number
+  base58Properties: string
+}
+
+export interface IInfusionUpdateObject {
+  clientPubKey: string
+  contractPubKey: string
+  userWalletHash: string
+  payTokenHash: string
+  payTokenAmount: number
+  base58Properties: string
+}
+
 export interface IPendingInfusionProperties {
   clientPubKey: string
   contractPubKey: string
@@ -304,6 +322,80 @@ export class HardenedContract {
     ]
 
     return this.Read(ReadMethod.PENDING_INFUSION, args)
+  }
+
+  InfusionMint = async (
+    connectedWallet: IConnectedWallet,
+    infusionMintObject: IInfusionMintObject
+  ): Promise<string> => {
+    const invokeScript: IInvokeScriptJson = {
+      operation: 'infusionMint',
+      scriptHash: this.contractHash,
+      args: [
+        {
+          type: 'String',
+          value: infusionMintObject.clientPubKey,
+        },
+        {
+          type: 'String',
+          value: infusionMintObject.contractPubKey,
+        },
+        {
+          type: 'Hash160',
+          value: infusionMintObject.contractHash,
+        },
+        {
+          type: 'Hash160',
+          value: infusionMintObject.payTokenHash,
+        },
+        {
+          type: 'Integer',
+          value: infusionMintObject.payTokenAmount,
+        },
+        {
+          type: 'String',
+          value: infusionMintObject.base58Properties,
+        },
+      ],
+    }
+    return this.invoke(connectedWallet, invokeScript)
+  }
+
+  InfusionUpdate = async (
+    connectedWallet: IConnectedWallet,
+    infusionUpdateObject: IInfusionUpdateObject
+  ): Promise<string> => {
+    const invokeScript: IInvokeScriptJson = {
+      operation: 'infusionUpdate',
+      scriptHash: this.contractHash,
+      args: [
+        {
+          type: 'String',
+          value: infusionUpdateObject.clientPubKey,
+        },
+        {
+          type: 'String',
+          value: infusionUpdateObject.contractPubKey,
+        },
+        {
+          type: 'Hash160',
+          value: infusionUpdateObject.userWalletHash,
+        },
+        {
+          type: 'Hash160',
+          value: infusionUpdateObject.payTokenHash,
+        },
+        {
+          type: 'Integer',
+          value: infusionUpdateObject.payTokenAmount,
+        },
+        {
+          type: 'String',
+          value: infusionUpdateObject.base58Properties,
+        },
+      ],
+    }
+    return this.invoke(connectedWallet, invokeScript)
   }
 
   Read = async (readMethod: ReadMethod, args = []): Promise<any> => {

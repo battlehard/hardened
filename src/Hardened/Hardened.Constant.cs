@@ -28,5 +28,6 @@ namespace Hardened
     private const string E_13 = "Pagination data must be provided, pageNumber and pageSize must have at least 1";
     private const string E_14 = "Input page size exceed the max limit of a single page";
     private const string E_15 = "Input page number exceed the totalPages";
+    private const string E_16 = "ERROR: Cannot execute InfusionMint for pending infusion that contains BH NFT";
   }
 }

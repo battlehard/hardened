@@ -8,6 +8,8 @@ import {
   HardenedContract,
   ReadMethod,
   IFeeStructure,
+  IInfusionMintObject,
+  IInfusionUpdateObject,
 } from '@/utils/neo/contracts/hardened'
 import React, { ChangeEvent, useEffect, useState } from 'react'
 import Notification from '../notification'
@@ -138,11 +140,11 @@ export default function AdminPage() {
     },
     {
       label: 'InfusionMint',
-      component: <></>, // TODO: Remaining Commands
+      component: ManageInfusionMint(),
     },
     {
       label: 'InfusionUpdate',
-      component: <></>, // TODO: Remaining Commands
+      component: ManageInfusionUpdate(),
     },
   ]
 
@@ -533,6 +535,368 @@ export default function AdminPage() {
           <InvokeButton isDisable={isDisable()} invoke={invoke} />
           <NotificationBox />
         </>
+      </div>
+    )
+  }
+
+  function ManageInfusionMint() {
+    const [inputClientPubKey, setInputClientPubKey] = useState('')
+    const INPUT_CLIENT_PUBKEY_ID = 'input-client-pubkey-id'
+    const [inputContractPubKey, setInputContractPubKey] = useState('')
+    const INPUT_CONTRACT_PUBKEY_ID = 'input-contract-pubkey-id'
+
+    const INPUT_CONTRACT_HASH = 'input-contract-hash'
+    const [inputContractHash, setInputContractHash] = useState('')
+    const [isValidContractHash, setIsValidContractHash] = useState(true)
+
+    const INPUT_PAY_TOKEN_HASH = 'input-pay-token-hash'
+    const [inputPayTokenHash, setInputPayTokenHash] = useState('')
+    const [isValidPayTokenHash, setIsValidPayTokenHash] = useState(true)
+
+    const [inputPayTokenAmount, setInputPayTokenAmount] = useState('')
+    const [isValidPayTokenAmount, setIsValidPayTokenAmount] = useState(true)
+
+    const [inputBase58Properties, setInputBase58Properties] = useState('')
+    const INPUT_BASE58_PROPERTIES_ID = 'input-base58-properties-id'
+
+    const isDisable = () => {
+      return (
+        !connectedWallet ||
+        inputClientPubKey.length == 0 ||
+        inputContractPubKey.length == 0 ||
+        inputBase58Properties.length == 0 ||
+        !isValidPayTokenHash ||
+        inputPayTokenHash.length == 0 ||
+        !isValidContractHash ||
+        inputContractHash.length == 0 ||
+        !isValidPayTokenAmount ||
+        inputPayTokenAmount.length == 0
+      )
+    }
+
+    const handleTextChange = (event: ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value
+
+      if (event.target.id == INPUT_CLIENT_PUBKEY_ID) {
+        setInputClientPubKey(value)
+      } else if (event.target.id == INPUT_CONTRACT_PUBKEY_ID) {
+        setInputContractPubKey(value)
+      } else if (event.target.id == INPUT_BASE58_PROPERTIES_ID) {
+        setInputBase58Properties(value)
+      }
+    }
+
+    const handleHashChange = (event: ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value
+
+      if (event.target.id == INPUT_PAY_TOKEN_HASH) {
+        setInputPayTokenHash(value)
+        if (value.length > 0) {
+          setIsValidPayTokenHash(HASH160_PATTERN.test(value))
+        } else {
+          setIsValidPayTokenHash(true)
+        }
+      } else if (event.target.id == INPUT_CONTRACT_HASH) {
+        setInputContractHash(value)
+        if (value.length > 0) {
+          setIsValidContractHash(HASH160_PATTERN.test(value))
+        } else {
+          setIsValidContractHash(true)
+        }
+      }
+    }
+
+    const handleNumberChange = (event: ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value
+      setInputPayTokenAmount(value)
+      if (value.length > 0) {
+        setIsValidPayTokenAmount(NUMBER_PATTERN.test(value))
+      } else {
+        setIsValidPayTokenAmount(true)
+      }
+    }
+
+    const invoke = async () => {
+      if (connectedWallet) {
+        try {
+          const infusionMintObject: IInfusionMintObject = {
+            clientPubKey: inputClientPubKey,
+            contractPubKey: inputContractPubKey,
+            contractHash: inputContractHash,
+            payTokenHash: inputPayTokenHash,
+            payTokenAmount: Number(inputPayTokenAmount),
+            base58Properties: inputBase58Properties,
+          }
+          const txid = await new HardenedContract(network).InfusionMint(
+            connectedWallet,
+            infusionMintObject
+          )
+          showSuccessPopup(txid)
+        } catch (e: any) {
+          if (e.type !== undefined) {
+            showErrorPopup(`Error: ${e.type} ${e.description}`)
+          }
+          console.log(e)
+        }
+      }
+    }
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <InputTextField
+          id={INPUT_CLIENT_PUBKEY_ID}
+          required
+          label="ClientPubKey"
+          value={inputClientPubKey}
+          onChange={handleTextChange}
+        />
+        <InputTextField
+          id={INPUT_CONTRACT_PUBKEY_ID}
+          required
+          label="ContractPubKey"
+          value={inputContractPubKey}
+          onChange={handleTextChange}
+        />
+        <TextField
+          required
+          id={INPUT_CONTRACT_HASH}
+          style={{
+            width: '450px',
+            marginTop: '25px',
+            marginLeft: '25px',
+          }}
+          label="Contract Hash (Required for transfer PayToken to)"
+          helperText={
+            isValidPayTokenHash
+              ? 'Contract in Hash160 format start in 0x'
+              : 'Invalid hash'
+          }
+          value={inputContractHash}
+          onChange={handleHashChange}
+          error={!isValidContractHash}
+          inputProps={{ maxLength: 42 }}
+        />
+        <TextField
+          required
+          id={INPUT_PAY_TOKEN_HASH}
+          style={{
+            width: '450px',
+            marginTop: '25px',
+            marginLeft: '25px',
+          }}
+          label="Pay Token Hash (Required)"
+          helperText={
+            isValidPayTokenHash
+              ? 'Pay token in Hash160 format start in 0x'
+              : 'Invalid hash'
+          }
+          value={inputPayTokenHash}
+          onChange={handleHashChange}
+          error={!isValidPayTokenHash}
+          inputProps={{ maxLength: 42 }}
+        />
+        <InputTextField
+          required
+          label="Pay Token Amount (Required)"
+          helperText={
+            isValidPayTokenAmount
+              ? 'Amount with BigInteger format. If the token use 8 decimal, then 1 token must input as 100000000'
+              : 'Must be number only'
+          }
+          value={inputPayTokenAmount}
+          onChange={handleNumberChange}
+          error={!isValidPayTokenAmount}
+        />
+        <InputTextField
+          multiline={true}
+          id={INPUT_BASE58_PROPERTIES_ID}
+          required
+          label="Base58 Properties"
+          value={inputBase58Properties}
+          onChange={handleTextChange}
+        />
+        <InvokeButton isDisable={isDisable()} invoke={invoke} />
+      </div>
+    )
+  }
+
+  function ManageInfusionUpdate() {
+    const [inputClientPubKey, setInputClientPubKey] = useState('')
+    const INPUT_CLIENT_PUBKEY_ID = 'input-client-pubkey-id'
+    const [inputContractPubKey, setInputContractPubKey] = useState('')
+    const INPUT_CONTRACT_PUBKEY_ID = 'input-contract-pubkey-id'
+
+    const INPUT_USER_WALLET_HASH = 'input-user-wallet-hash'
+    const [inputUserWalletHash, setInputUserWalletHash] = useState('')
+    const [isValidUserWalletHash, setIsValidUserWalletHash] = useState(true)
+
+    const INPUT_PAY_TOKEN_HASH = 'input-pay-token-hash'
+    const [inputPayTokenHash, setInputPayTokenHash] = useState('')
+    const [isValidPayTokenHash, setIsValidPayTokenHash] = useState(true)
+
+    const [inputPayTokenAmount, setInputPayTokenAmount] = useState('')
+    const [isValidPayTokenAmount, setIsValidPayTokenAmount] = useState(true)
+
+    const [inputBase58Properties, setInputBase58Properties] = useState('')
+    const INPUT_BASE58_PROPERTIES_ID = 'input-base58-properties-id'
+
+    const isDisable = () => {
+      return (
+        !connectedWallet ||
+        inputClientPubKey.length == 0 ||
+        inputContractPubKey.length == 0 ||
+        inputBase58Properties.length == 0 ||
+        !isValidPayTokenHash ||
+        inputPayTokenHash.length == 0 ||
+        !isValidUserWalletHash ||
+        inputUserWalletHash.length == 0 ||
+        !isValidPayTokenAmount ||
+        inputPayTokenAmount.length == 0
+      )
+    }
+
+    const handleTextChange = (event: ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value
+
+      if (event.target.id == INPUT_CLIENT_PUBKEY_ID) {
+        setInputClientPubKey(value)
+      } else if (event.target.id == INPUT_CONTRACT_PUBKEY_ID) {
+        setInputContractPubKey(value)
+      } else if (event.target.id == INPUT_BASE58_PROPERTIES_ID) {
+        setInputBase58Properties(value)
+      }
+    }
+
+    const handleHashChange = (event: ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value
+
+      if (event.target.id == INPUT_PAY_TOKEN_HASH) {
+        setInputPayTokenHash(value)
+        if (value.length > 0) {
+          setIsValidPayTokenHash(HASH160_PATTERN.test(value))
+        } else {
+          setIsValidPayTokenHash(true)
+        }
+      } else if (event.target.id == INPUT_USER_WALLET_HASH) {
+        setInputUserWalletHash(value)
+        if (value.length > 0) {
+          setIsValidUserWalletHash(HASH160_PATTERN.test(value))
+        } else {
+          setIsValidUserWalletHash(true)
+        }
+      }
+    }
+
+    const handleNumberChange = (event: ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value
+      setInputPayTokenAmount(value)
+      if (value.length > 0) {
+        setIsValidPayTokenAmount(NUMBER_PATTERN.test(value))
+      } else {
+        setIsValidPayTokenAmount(true)
+      }
+    }
+
+    const invoke = async () => {
+      if (connectedWallet) {
+        try {
+          const infusionUpdateObject: IInfusionUpdateObject = {
+            clientPubKey: inputClientPubKey,
+            contractPubKey: inputContractPubKey,
+            userWalletHash: inputUserWalletHash,
+            payTokenHash: inputPayTokenHash,
+            payTokenAmount: Number(inputPayTokenAmount),
+            base58Properties: inputBase58Properties,
+          }
+          const txid = await new HardenedContract(network).InfusionUpdate(
+            connectedWallet,
+            infusionUpdateObject
+          )
+          showSuccessPopup(txid)
+        } catch (e: any) {
+          if (e.type !== undefined) {
+            showErrorPopup(`Error: ${e.type} ${e.description}`)
+          }
+          console.log(e)
+        }
+      }
+    }
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <InputTextField
+          id={INPUT_CLIENT_PUBKEY_ID}
+          required
+          label="ClientPubKey"
+          value={inputClientPubKey}
+          onChange={handleTextChange}
+        />
+        <InputTextField
+          id={INPUT_CONTRACT_PUBKEY_ID}
+          required
+          label="ContractPubKey"
+          value={inputContractPubKey}
+          onChange={handleTextChange}
+        />
+        <TextField
+          required
+          id={INPUT_USER_WALLET_HASH}
+          style={{
+            width: '450px',
+            marginTop: '25px',
+            marginLeft: '25px',
+          }}
+          label="User Wallet Hash (Required for check with contract that the wallet is the same)"
+          helperText={
+            isValidPayTokenHash
+              ? 'User Wallet in Hash160 format start in 0x'
+              : 'Invalid hash'
+          }
+          value={inputUserWalletHash}
+          onChange={handleHashChange}
+          error={!isValidUserWalletHash}
+          inputProps={{ maxLength: 42 }}
+        />
+        <TextField
+          required
+          id={INPUT_PAY_TOKEN_HASH}
+          style={{
+            width: '450px',
+            marginTop: '25px',
+            marginLeft: '25px',
+          }}
+          label="Pay Token Hash (Required)"
+          helperText={
+            isValidPayTokenHash
+              ? 'Pay token in Hash160 format start in 0x'
+              : 'Invalid hash'
+          }
+          value={inputPayTokenHash}
+          onChange={handleHashChange}
+          error={!isValidPayTokenHash}
+          inputProps={{ maxLength: 42 }}
+        />
+        <InputTextField
+          required
+          label="Pay Token Amount (Required)"
+          helperText={
+            isValidPayTokenAmount
+              ? 'Amount with BigInteger format. If the token use 8 decimal, then 1 token must input as 100000000'
+              : 'Must be number only'
+          }
+          value={inputPayTokenAmount}
+          onChange={handleNumberChange}
+          error={!isValidPayTokenAmount}
+        />
+        <InputTextField
+          multiline={true}
+          id={INPUT_BASE58_PROPERTIES_ID}
+          required
+          label="Base58 Properties"
+          value={inputBase58Properties}
+          onChange={handleTextChange}
+        />
+        <InvokeButton isDisable={isDisable()} invoke={invoke} />
       </div>
     )
   }
