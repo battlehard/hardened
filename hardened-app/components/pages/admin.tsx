@@ -59,7 +59,8 @@ const MessagePanel = ({ message }: MessagePanelProps) => {
 
 export default function AdminPage() {
   // Wallet
-  const { connectedWallet, network } = useWallet()
+  const { connectedWallet, networkFallback } = useWallet()
+
   // Notification
   const [open, setOpen] = useState(false)
   const [severity, setSeverity] = useState<AlertColor>('success')
@@ -170,7 +171,7 @@ export default function AdminPage() {
     const getAdmin = async () => {
       setLoading(true)
       try {
-        const result = await new HardenedContract(network).Read(
+        const result = await new HardenedContract(networkFallback).Read(
           ReadMethod.GET_ADMIN
         )
         setAdminList(result)
@@ -191,7 +192,7 @@ export default function AdminPage() {
     const invoke = async () => {
       if (connectedWallet) {
         try {
-          const txid = await new HardenedContract(network).ManageAdmin(
+          const txid = await new HardenedContract(networkFallback).ManageAdmin(
             connectedWallet,
             inputWalletHash,
             manageAdminAction
@@ -262,7 +263,7 @@ export default function AdminPage() {
     const getBlueprintImageUrl = async () => {
       setLoading(true)
       try {
-        const result = await new HardenedContract(network).Read(
+        const result = await new HardenedContract(networkFallback).Read(
           ReadMethod.GET_BLUEPRINT_IMAGE_URL
         )
         setBlueprintImageUrl(result)
@@ -295,7 +296,7 @@ export default function AdminPage() {
     const invoke = async () => {
       if (connectedWallet) {
         try {
-          const txid = await new HardenedContract(network).SetBlueprintImageUrl(
+          const txid = await new HardenedContract(networkFallback).SetBlueprintImageUrl(
             connectedWallet,
             inputImageUrl
           )
@@ -450,7 +451,7 @@ export default function AdminPage() {
             gasUpdateCost: Number(inputGasUpdateCost),
             walletPoolHash: inputWalletPoolHash,
           }
-          const txid = await new HardenedContract(network).FeeUpdate(
+          const txid = await new HardenedContract(networkFallback).FeeUpdate(
             connectedWallet,
             feeStructure
           )
@@ -627,7 +628,7 @@ export default function AdminPage() {
             payTokenAmount: Number(inputPayTokenAmount),
             base58Properties: inputBase58Properties,
           }
-          const txid = await new HardenedContract(network).InfusionMint(
+          const txid = await new HardenedContract(networkFallback).InfusionMint(
             connectedWallet,
             infusionMintObject
           )
@@ -808,7 +809,7 @@ export default function AdminPage() {
             payTokenAmount: Number(inputPayTokenAmount),
             base58Properties: inputBase58Properties,
           }
-          const txid = await new HardenedContract(network).InfusionUpdate(
+          const txid = await new HardenedContract(networkFallback).InfusionUpdate(
             connectedWallet,
             infusionUpdateObject
           )

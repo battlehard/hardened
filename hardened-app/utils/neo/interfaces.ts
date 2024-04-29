@@ -10,6 +10,7 @@ export interface IWalletStates {
   }[]
   invokeScript?: sc.ContractCallJson
   network: INetworkType
+  networkFallback: INetworkType
   connectedWallet?: IConnectedWallet
   isWalletModalActive: boolean
   openWalletModal: () => void
