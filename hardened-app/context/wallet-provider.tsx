@@ -1,8 +1,9 @@
 'use client'
 
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useMemo } from 'react'
 import {
   IConnectedWallet,
+  INetworkType,
   IWalletOptions,
   IWalletStates,
   IWalletType,
@@ -29,6 +30,13 @@ export default function WalletProvider(props: {
   const [invokeScript, setInvokeScript] = useState<
     sc.ContractCallJson | undefined
   >()
+
+  const networkFallback = useMemo(() => {
+    if (network) {
+      return network
+    }
+    return connectedWallet?.network?.defaultNetwork as INetworkType
+  }, [network, connectedWallet])
 
   const openWalletModal = () => {
     setWalletModalActive(true)
@@ -63,6 +71,7 @@ export default function WalletProvider(props: {
 
   const contextValue: IWalletStates = {
     network,
+    networkFallback,
     invokeScript,
     list: WalletAPI.list,
     connectedWallet,
