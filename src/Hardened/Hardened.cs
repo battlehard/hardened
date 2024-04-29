@@ -156,7 +156,7 @@ namespace Hardened
       if (isAdmin)
       {
         refundGas -= transactionFee;
-        // Case admin invoke this tx, refun partial (full gas - this tx gas fee) GAS.
+        // Case admin invoke this tx, refund partial (full gas - this tx gas fee) GAS.
         if (refundGas > 0)
           Safe17Transfer(GAS.Hash, bhContrachHash, pending.userWalletHash, refundGas);
       }
