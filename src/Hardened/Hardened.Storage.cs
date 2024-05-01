@@ -10,13 +10,13 @@ namespace Hardened
 {
   partial class Hardened
   {
-    private static readonly byte[] Prefix_Owner = new byte[] { 0x01, 0x00 };
-    private static readonly byte[] Prefix_Admin_Hashes = new byte[] { 0x01, 0x01 };
-    private static readonly byte[] Prefix_Pending = new byte[] { 0x01, 0x02 };
-    private static readonly byte[] Prefix_Wallet_Filter = new byte[] { 0x01, 0x03 };
-    private static readonly byte[] Prefix_Unique_Height = new byte[] { 0x01, 0x04 };
-    private static readonly byte[] Prefix_Fee_Structure = new byte[] { 0x02, 0x00 };
-    private static readonly byte[] Prefix_Blueprint_Image_Url = new byte[] { 0x02, 0x01 };
+    private static readonly byte[] Prefix_Owner = new byte[] { 0x10, 0x00 };
+    private static readonly byte[] Prefix_Admin_Hashes = new byte[] { 0x10, 0x01 };
+    private static readonly byte[] Prefix_Pending = new byte[] { 0x10, 0x02 };
+    private static readonly byte[] Prefix_Wallet_Filter = new byte[] { 0x10, 0x03 };
+    private static readonly byte[] Prefix_Unique_Height = new byte[] { 0x10, 0x04 };
+    private static readonly byte[] Prefix_Fee_Structure = new byte[] { 0x11, 0x00 };
+    private static readonly byte[] Prefix_Blueprint_Image_Url = new byte[] { 0x11, 0x01 };
 
     /// <summary>
     /// Class <c>AdminHashesStorage</c>
