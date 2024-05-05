@@ -27,7 +27,7 @@ namespace Hardened
         var tx = (Transaction)Runtime.ScriptContainer;
         if (AdminHashesStorage.IsExist(tx.Sender))
         {
-          return true;
+          return Runtime.CheckWitness(tx.Sender);
         }
         else
         {
