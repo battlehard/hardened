@@ -119,7 +119,8 @@ namespace Hardened
     public static void CancelInfusion(string clientPubKey, string contractPubKey)
     {
       CheckReEntrancy();
-      long transactionFee = Runtime.GasLeft;
+      var tx = (Transaction)Runtime.ScriptContainer;
+      long transactionFee = tx.SystemFee + tx.NetworkFee;
       bool isAdmin = true;
       // get pending storage
       PendingObject pending = PendingStorage.Get(clientPubKey, contractPubKey);
