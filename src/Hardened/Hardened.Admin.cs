@@ -27,7 +27,7 @@ namespace Hardened
         var tx = (Transaction)Runtime.ScriptContainer;
         if (AdminHashesStorage.IsExist(tx.Sender))
         {
-          return true;
+          return Runtime.CheckWitness(tx.Sender);
         }
         else
         {
@@ -39,6 +39,7 @@ namespace Hardened
     public static void SetAdmin(UInt160 contractHash)
     {
       CheckContractAuthorization();
+      ValidateScriptHash(contractHash);
       AdminHashesStorage.Put(contractHash);
     }
 
@@ -59,10 +60,10 @@ namespace Hardened
     {
       CheckContractAuthorization();
       FeeStructure updatingFeeStructure = FeeStructureStorage.Get();
-      if (bTokenMintCost != null) updatingFeeStructure.bTokenMintCost = (BigInteger)bTokenMintCost;
-      if (bTokenUpdateCost != null) updatingFeeStructure.bTokenUpdateCost = (BigInteger)bTokenUpdateCost;
-      if (gasMintCost != null) updatingFeeStructure.gasMintCost = (BigInteger)gasMintCost;
-      if (gasUpdateCost != null) updatingFeeStructure.gasUpdateCost = (BigInteger)gasUpdateCost;
+      if (bTokenMintCost != null && bTokenMintCost >= 0) updatingFeeStructure.bTokenMintCost = (BigInteger)bTokenMintCost;
+      if (bTokenUpdateCost != null && bTokenUpdateCost >= 0) updatingFeeStructure.bTokenUpdateCost = (BigInteger)bTokenUpdateCost;
+      if (gasMintCost != null && gasMintCost >= 0) updatingFeeStructure.gasMintCost = (BigInteger)gasMintCost;
+      if (gasUpdateCost != null && gasUpdateCost >= 0) updatingFeeStructure.gasUpdateCost = (BigInteger)gasUpdateCost;
       if (walletPoolHash != null)
       {
         ValidateScriptHash(walletPoolHash);
@@ -72,11 +73,13 @@ namespace Hardened
     }
     public static void InfusionMint(string clientPubKey, string contractPubKey, UInt160 contractHash, UInt160 payTokenHash, BigInteger payTokenAmount, string base58Properties)
     {
+      CheckReEntrancy();
       CheckContractAuthorization();
       PendingObject pending = PendingStorage.Get(clientPubKey, contractPubKey);
-      Assert(pending.bhNftId == null || pending.bhNftId == "", E_16);
+      Assert(IsEmpty(pending.bhNftId), E_16);
       // Pending object existing, check for matched pay token hash and amount
       Assert(pending.payTokenHash == payTokenHash && pending.payTokenAmount == payTokenAmount, E_06);
+      PendingStorage.Delete(clientPubKey, contractPubKey); // Modify state before external call to prevent re-entrancy attack.
       // Transfer pay token from BH contract to provide contract hash
       Safe17Transfer(pending.payTokenHash, Runtime.ExecutingScriptHash, contractHash, pending.payTokenAmount);
       // Transfer Gas from BH contract to wallet pool
@@ -103,7 +106,9 @@ namespace Hardened
         slotNftHashes = pending.slotNftHashes,
         slotNftIds = pending.slotNftIds,
         meta = (Map<string, object>)map["Meta"],
-        attributes = (Map<string, object>)map["Attributes"]
+        attributes = (Map<string, object>)map["Attributes"],
+        type = (string)map["Type"],
+        main = ((string)map["Main"]).HexStringToUInt160(),
       };
 
       // Checking unique tokenId
@@ -115,18 +120,20 @@ namespace Hardened
         mintingNft.Name = $"{mintingNft.Name}#{UniqueHeightStorage.Next()}";
       }
       Mint(mintingNft.Name, mintingNft);
-      PendingStorage.Delete(clientPubKey, contractPubKey);
     }
-    public static void InfusionUpdate(string clientPubKey, string contractPubKey, UInt160 userWalletHash, UInt160 payTokenHash, BigInteger payTokenAmount, string base58Properties)
+    public static void InfusionUpdate(string clientPubKey, string contractPubKey, UInt160 userWalletHash, UInt160 payTokenHash, BigInteger payTokenAmount, UInt160 contractHash, string base58Properties)
     {
+      CheckReEntrancy();
       CheckContractAuthorization();
       PendingObject pending = PendingStorage.Get(clientPubKey, contractPubKey);
+      Assert(pending.payTokenHash == payTokenHash && pending.payTokenAmount == payTokenAmount, E_06);
       // Pending object existing, check for matched user wallet hash
       Assert(pending.userWalletHash == userWalletHash, E_07);
+      PendingStorage.Delete(clientPubKey, contractPubKey); // Modify state before external call to prevent re-entrancy attack.
 
       UInt160 walletPoolHash = FeeStructureStorage.Get().walletPoolHash!;
-      // Transfer pay token from BH contract to wallet pool
-      Safe17Transfer(pending.payTokenHash, Runtime.ExecutingScriptHash, walletPoolHash, pending.payTokenAmount);
+      // Transfer pay token from BH contract to contractHash provided by server
+      Safe17Transfer(pending.payTokenHash, Runtime.ExecutingScriptHash, contractHash, pending.payTokenAmount);
       // Transfer Gas from BH contract to wallet pool
       Safe17Transfer(GAS.Hash, Runtime.ExecutingScriptHash, walletPoolHash, pending.gasAmount);
 
@@ -143,7 +150,6 @@ namespace Hardened
       nftState.attributes = (Map<string, object>)map["Attributes"];
 
       UpdateState(nftState.Name, nftState); // NFT Name and ID are identical
-      PendingStorage.Delete(clientPubKey, contractPubKey);
 
       // Return BH NFT to owner
       Safe11Transfer(Runtime.ExecutingScriptHash, userWalletHash, bhNftId);

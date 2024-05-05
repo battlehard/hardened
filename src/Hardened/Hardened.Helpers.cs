@@ -2,6 +2,7 @@
 using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Native;
 using Neo.SmartContract.Framework.Services;
+using System.Numerics;
 using static Hardened.Helpers;
 using static Hardened.Transfer;
 
@@ -17,7 +18,7 @@ namespace Hardened
     }
     private static void ValidateExternalNftOwnership(UInt160 contractHash, string nftId)
     {
-      UInt160 nftOwner = (UInt160)((Map<string, object>)Contract.Call(contractHash, "properties", CallFlags.All, new object[] { nftId }))["owner"];
+      UInt160 nftOwner = (UInt160)Contract.Call(contractHash, "ownerOf", CallFlags.All, new object[] { nftId });
       Assert(Runtime.CheckWitness(nftOwner), E_04);
     }
     private static void UpdateState(string bhNftId, HardenedState nftState)
@@ -65,6 +66,16 @@ namespace Hardened
         }
       }
       return false;
+    }
+
+    private static void CheckReEntrancy()
+    {
+      // Debug always default as false.
+      // Will be change to true in the debug mode to skip ReEntrancy Check where same methods call multiples time in a transaction.
+      if ((BigInteger)Storage.Get(Storage.CurrentContext, Prefix_Debug) == 0)
+      {
+        Assert(Runtime.InvocationCounter == 1, "Re-Entrancy Not Allowed");
+      }
     }
   }
 }

@@ -20,6 +20,8 @@ namespace Hardened
     public string[] slotNftIds;
     public Map<string, object> meta;
     public Map<string, object> attributes;
+    public string type;
+    public UInt160 main;
   }
 
   public class State
