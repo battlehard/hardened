@@ -74,7 +74,7 @@ namespace Hardened
     {
       CheckContractAuthorization();
       PendingObject pending = PendingStorage.Get(clientPubKey, contractPubKey);
-      Assert(pending.bhNftId == null || pending.bhNftId == "", E_16);
+      Assert(IsEmpty(pending.bhNftId), E_16);
       // Pending object existing, check for matched pay token hash and amount
       Assert(pending.payTokenHash == payTokenHash && pending.payTokenAmount == payTokenAmount, E_06);
       // Transfer pay token from BH contract to provide contract hash

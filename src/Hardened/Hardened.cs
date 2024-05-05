@@ -78,30 +78,18 @@ namespace Hardened
         if (nft.state == State.Ready)
         {
           // If BH NFT is READY, transfer only new NFT.
-          for (int i = 0; i < slotNftIds.Length; i++)
-          {
-            ValidateExternalNftOwnership(slotNftHashes[i], slotNftIds[i]);
-            Safe11Transfer(slotNftHashes[i], bhContractHash, slotNftIds[i]);
-          }
+          ValidateAndTransferNFT(slotNftHashes, slotNftIds, bhContractHash);
         }
         else
         {
           // If BH NFT is BLUEPRINT, allow transfer NFT pieces up to level.
           Assert(slotNftIds.Length <= nft.level, E_11);
-          for (int i = 0; i < slotNftIds.Length; i++)
-          {
-            ValidateExternalNftOwnership(slotNftHashes[i], slotNftIds[i]);
-            Safe11Transfer(slotNftHashes[i], bhContractHash, slotNftIds[i]);
-          }
+          ValidateAndTransferNFT(slotNftHashes, slotNftIds, bhContractHash);
         }
       }
       else
       {
-        for (int i = 0; i < slotNftIds.Length; i++)
-        {
-          ValidateExternalNftOwnership(slotNftHashes[i], slotNftIds[i]);
-          Safe11Transfer(slotNftHashes[i], bhContractHash, slotNftIds[i]);
-        }
+        ValidateAndTransferNFT(slotNftHashes, slotNftIds, bhContractHash);
       }
 
       // Generate contractPubKey (PubKey2)
@@ -197,6 +185,15 @@ namespace Hardened
 
     public static void OnNEP17Payment(UInt160 from, BigInteger amount, object data)
     {
+    }
+
+    private static void ValidateAndTransferNFT(UInt160[] slotNftHashes, string[] slotNftIds, UInt160 bhContractHash)
+    {
+      for (int i = 0; i < slotNftIds.Length; i++)
+      {
+        ValidateExternalNftOwnership(slotNftHashes[i], slotNftIds[i]);
+        Safe11Transfer(slotNftHashes[i], bhContractHash, slotNftIds[i]);
+      }
     }
   }
 }
