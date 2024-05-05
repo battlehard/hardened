@@ -30,7 +30,7 @@ export enum ArgumentType {
 }
 
 export const HARDENED_SCRIPT_HASH = {
-  [TESTNET]: '0xefb1125ce1cf90476b1b1e049be07d81e6be3420',
+  [TESTNET]: '0x99b6f2b6fdb317831ebe22fdb956afe01a53d7d3',
   [MAINNET]: '',
 }
 
