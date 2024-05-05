@@ -18,7 +18,7 @@ namespace Hardened
     }
     private static void ValidateExternalNftOwnership(UInt160 contractHash, string nftId)
     {
-      UInt160 nftOwner = (UInt160)((Map<string, object>)Contract.Call(contractHash, "properties", CallFlags.All, new object[] { nftId }))["owner"];
+      UInt160 nftOwner = (UInt160)Contract.Call(contractHash, "ownerOf", CallFlags.All, new object[] { nftId });
       Assert(Runtime.CheckWitness(nftOwner), E_04);
     }
     private static void UpdateState(string bhNftId, HardenedState nftState)
