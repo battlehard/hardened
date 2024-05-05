@@ -19,6 +19,7 @@ namespace Hardened
     public static void TestNonCore()
     {
       CheckContractAuthorization();
+      EnableDebugStorage();
       Debug_Helpers();
       Debug_Transfer();
       Debug_ManageAdmin();
@@ -27,12 +28,14 @@ namespace Hardened
     public static void TestUserOperation()
     {
       CheckContractAuthorization();
+      EnableDebugStorage();
       Debug_PreInfusion_Mint();
       Debug_PendingInfusion();
     }
     public static void TestAdminOperation()
     {
       CheckContractAuthorization();
+      EnableDebugStorage();
       Debug_InfusionMintAndInfusionUpdate();
       Debug_UnfuseAndBurnInfusion();
     }
@@ -382,6 +385,11 @@ namespace Hardened
     {
       string msg = (string)StdLib.Deserialize(StdLib.Serialize(e));
       return msg;
+    }
+
+    private static void EnableDebugStorage()
+    {
+      Storage.Put(Storage.CurrentContext, Prefix_Debug, 1);
     }
   }
 }

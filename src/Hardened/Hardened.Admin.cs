@@ -72,11 +72,13 @@ namespace Hardened
     }
     public static void InfusionMint(string clientPubKey, string contractPubKey, UInt160 contractHash, UInt160 payTokenHash, BigInteger payTokenAmount, string base58Properties)
     {
+      CheckReEntrancy();
       CheckContractAuthorization();
       PendingObject pending = PendingStorage.Get(clientPubKey, contractPubKey);
       Assert(IsEmpty(pending.bhNftId), E_16);
       // Pending object existing, check for matched pay token hash and amount
       Assert(pending.payTokenHash == payTokenHash && pending.payTokenAmount == payTokenAmount, E_06);
+      PendingStorage.Delete(clientPubKey, contractPubKey); // Modify state before external call to prevent re-entrancy attack.
       // Transfer pay token from BH contract to provide contract hash
       Safe17Transfer(pending.payTokenHash, Runtime.ExecutingScriptHash, contractHash, pending.payTokenAmount);
       // Transfer Gas from BH contract to wallet pool
@@ -115,14 +117,15 @@ namespace Hardened
         mintingNft.Name = $"{mintingNft.Name}#{UniqueHeightStorage.Next()}";
       }
       Mint(mintingNft.Name, mintingNft);
-      PendingStorage.Delete(clientPubKey, contractPubKey);
     }
     public static void InfusionUpdate(string clientPubKey, string contractPubKey, UInt160 userWalletHash, UInt160 payTokenHash, BigInteger payTokenAmount, string base58Properties)
     {
+      CheckReEntrancy();
       CheckContractAuthorization();
       PendingObject pending = PendingStorage.Get(clientPubKey, contractPubKey);
       // Pending object existing, check for matched user wallet hash
       Assert(pending.userWalletHash == userWalletHash, E_07);
+      PendingStorage.Delete(clientPubKey, contractPubKey); // Modify state before external call to prevent re-entrancy attack.
 
       UInt160 walletPoolHash = FeeStructureStorage.Get().walletPoolHash!;
       // Transfer pay token from BH contract to wallet pool
@@ -143,7 +146,6 @@ namespace Hardened
       nftState.attributes = (Map<string, object>)map["Attributes"];
 
       UpdateState(nftState.Name, nftState); // NFT Name and ID are identical
-      PendingStorage.Delete(clientPubKey, contractPubKey);
 
       // Return BH NFT to owner
       Safe11Transfer(Runtime.ExecutingScriptHash, userWalletHash, bhNftId);

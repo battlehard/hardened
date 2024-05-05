@@ -11,6 +11,7 @@ namespace Hardened
   partial class Hardened
   {
     private static readonly byte[] Prefix_Owner = new byte[] { 0x10, 0x00 };
+    private static readonly byte[] Prefix_Debug = new byte[] { 0x10, 0xff };
     private static readonly byte[] Prefix_Admin_Hashes = new byte[] { 0x10, 0x01 };
     private static readonly byte[] Prefix_Pending = new byte[] { 0x10, 0x02 };
     private static readonly byte[] Prefix_Wallet_Filter = new byte[] { 0x10, 0x03 };

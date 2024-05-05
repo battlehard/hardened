@@ -24,6 +24,7 @@ namespace Hardened
       if (update) return;
       var tx = (Transaction)Runtime.ScriptContainer;
       Storage.Put(Storage.CurrentContext, Prefix_Owner, tx.Sender);
+      Storage.Put(Storage.CurrentContext, Prefix_Debug, 0);
     }
 
     public static void Update(ByteString nefFile, string manifest)

@@ -19,6 +19,7 @@ namespace Hardened
     public static string[] PreInfusion(string clientPubKey, UInt160 payTokenHash, BigInteger payTokenAmount, string bhNftId,
                                   UInt160[] slotNftHashes, string[] slotNftIds)
     {
+      CheckReEntrancy();
       // Get user wallet information
       UInt160 userWalletHash = ((Transaction)Runtime.ScriptContainer).Sender;
       string userWalletAddress = userWalletHash.ToAddress();
@@ -117,6 +118,7 @@ namespace Hardened
 
     public static void CancelInfusion(string clientPubKey, string contractPubKey)
     {
+      CheckReEntrancy();
       long transactionFee = Runtime.GasLeft;
       bool isAdmin = true;
       // get pending storage
@@ -126,6 +128,9 @@ namespace Hardened
         isAdmin = false;
         Assert(Runtime.CheckWitness(pending.userWalletHash), E_03);
       }
+      // Delete pending storage
+      PendingStorage.Delete(clientPubKey, contractPubKey);
+
       // Destination of locking tokens and NFTs.
       UInt160 bhContrachHash = Runtime.ExecutingScriptHash; // This contract address
       // Returning of locked assets.
@@ -136,9 +141,6 @@ namespace Hardened
       }
       Safe17Transfer(pending.payTokenHash, bhContrachHash, pending.userWalletHash, pending.payTokenAmount); // Pay Token
       BigInteger refundGas = pending.gasAmount; // Prepare full refund amount
-
-      // Delete pending storage
-      PendingStorage.Delete(clientPubKey, contractPubKey);
 
       // Refund GAS 
       if (isAdmin)
@@ -157,26 +159,28 @@ namespace Hardened
 
     public static void Unfuse(string bhNftId)
     {
+      CheckReEntrancy();
       HardenedState nftState = ValidateHardenedOwnership(bhNftId);
       Assert(nftState.state == State.Ready, E_05);
-      ReturnLockNFTs(nftState);
 
       nftState.state = State.Blueprint;
       nftState.image = GetBlueprintImageUrl();
       nftState.meta.Remove("Sync");
       nftState.attributes.Remove("Nature");
       UpdateState(bhNftId, nftState);
+      ReturnLockNFTs(nftState);
     }
 
     public static void BurnInfusion(string bhNftId)
     {
+      CheckReEntrancy();
       HardenedState nftState = ValidateHardenedOwnership(bhNftId);
+      Burn(bhNftId);
       // If ready return locked NFTs
       if (nftState.state == State.Ready)
       {
         ReturnLockNFTs(nftState);
       }
-      Burn(bhNftId);
     }
 
     public static void OnNEP11Payment(UInt160 from, BigInteger amount, ByteString tokenId, object[] data)

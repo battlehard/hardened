@@ -2,6 +2,7 @@
 using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Native;
 using Neo.SmartContract.Framework.Services;
+using System.Numerics;
 using static Hardened.Helpers;
 using static Hardened.Transfer;
 
@@ -65,6 +66,16 @@ namespace Hardened
         }
       }
       return false;
+    }
+
+    private static void CheckReEntrancy()
+    {
+      // Debug always default as false.
+      // Will be change to true in the debug mode to skip ReEntrancy Check where same methods call multiples time in a transaction.
+      if ((BigInteger)Storage.Get(Storage.CurrentContext, Prefix_Debug) == 0)
+      {
+        Assert(Runtime.InvocationCounter == 1, "Re-Entrancy Not Allowed");
+      }
     }
   }
 }
