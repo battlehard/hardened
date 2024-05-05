@@ -296,10 +296,9 @@ export default function AdminPage() {
     const invoke = async () => {
       if (connectedWallet) {
         try {
-          const txid = await new HardenedContract(networkFallback).SetBlueprintImageUrl(
-            connectedWallet,
-            inputImageUrl
-          )
+          const txid = await new HardenedContract(
+            networkFallback
+          ).SetBlueprintImageUrl(connectedWallet, inputImageUrl)
           showSuccessPopup(txid)
         } catch (e: any) {
           if (e.type !== undefined) {
@@ -738,6 +737,10 @@ export default function AdminPage() {
     const [inputPayTokenAmount, setInputPayTokenAmount] = useState('')
     const [isValidPayTokenAmount, setIsValidPayTokenAmount] = useState(true)
 
+    const INPUT_CONTRACT_HASH = 'input-contract-hash'
+    const [inputContractHash, setInputContractHash] = useState('')
+    const [isValidContractHash, setIsValidContractHash] = useState(true)
+
     const [inputBase58Properties, setInputBase58Properties] = useState('')
     const INPUT_BASE58_PROPERTIES_ID = 'input-base58-properties-id'
 
@@ -785,6 +788,13 @@ export default function AdminPage() {
         } else {
           setIsValidUserWalletHash(true)
         }
+      } else if (event.target.id == INPUT_CONTRACT_HASH) {
+        setInputContractHash(value)
+        if (value.length > 0) {
+          setIsValidContractHash(HASH160_PATTERN.test(value))
+        } else {
+          setIsValidContractHash(true)
+        }
       }
     }
 
@@ -807,12 +817,12 @@ export default function AdminPage() {
             userWalletHash: inputUserWalletHash,
             payTokenHash: inputPayTokenHash,
             payTokenAmount: Number(inputPayTokenAmount),
+            contractHash: inputContractHash,
             base58Properties: inputBase58Properties,
           }
-          const txid = await new HardenedContract(networkFallback).InfusionUpdate(
-            connectedWallet,
-            infusionUpdateObject
-          )
+          const txid = await new HardenedContract(
+            networkFallback
+          ).InfusionUpdate(connectedWallet, infusionUpdateObject)
           showSuccessPopup(txid)
         } catch (e: any) {
           if (e.type !== undefined) {
@@ -888,6 +898,25 @@ export default function AdminPage() {
           value={inputPayTokenAmount}
           onChange={handleNumberChange}
           error={!isValidPayTokenAmount}
+        />
+        <TextField
+          required
+          id={INPUT_CONTRACT_HASH}
+          style={{
+            width: '450px',
+            marginTop: '25px',
+            marginLeft: '25px',
+          }}
+          label="Contract Hash (Required for transfer PayToken to)"
+          helperText={
+            isValidPayTokenHash
+              ? 'Contract in Hash160 format start in 0x'
+              : 'Invalid hash'
+          }
+          value={inputContractHash}
+          onChange={handleHashChange}
+          error={!isValidContractHash}
+          inputProps={{ maxLength: 42 }}
         />
         <InputTextField
           multiline={true}

@@ -84,6 +84,7 @@ export interface IInfusionUpdateObject {
   userWalletHash: string
   payTokenHash: string
   payTokenAmount: number
+  contractHash: string
   base58Properties: string
 }
 
@@ -388,6 +389,10 @@ export class HardenedContract {
         {
           type: 'Integer',
           value: infusionUpdateObject.payTokenAmount,
+        },
+        {
+          type: 'Hash160',
+          value: infusionUpdateObject.contractHash,
         },
         {
           type: 'String',
